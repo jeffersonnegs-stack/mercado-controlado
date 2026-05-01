@@ -1,39 +1,23 @@
 const API = "https://script.google.com/macros/s/AKfycbywxAftJ711lOTeagCSyIpzVKK0394m4F4VmzmXEzmvXHgdpKj55ZAj7_Ucz4jrIpc-kQ/exec";
 
-function enviar() {
-  const url = document.getElementById("url").value;
+async function processarNota(url) {
+  const res = await fetch(API + "?url=" + encodeURIComponent(url), {
+    method: "POST"
+  });
 
-  fetch(`${API}?url=${encodeURIComponent(url)}`)
-    .then(r => r.json())
-    .then(d => {
-      if (d.status === "ok") {
-        alert("Nota salva!");
-      } else {
-        alert("Erro ou duplicado");
-      }
-    });
+  const data = await res.json();
+
+  salvarDados(data);
+  return data;
 }
 
-function irDashboard() {
-  window.location.href = "dashboard.html";
-}
+function salvarDados(dados) {
+  let historico = JSON.parse(localStorage.getItem("notas")) || [];
+  
+  historico.push({
+    data: new Date().toISOString(),
+    ...dados
+  });
 
-function voltar() {
-  window.location.href = "index.html";
-}
-
-// DASHBOARD REAL
-function carregarDashboard() {
-  fetch(`${API}?acao=relatorio`)
-    .then(r => r.json())
-    .then(d => {
-      document.getElementById("total").innerText =
-        "Total: R$ " + d.totalMesAtual;
-
-      document.getElementById("essencial").innerText =
-        "Essencial: R$ " + d.grupos.Essencial;
-
-      document.getElementById("superfluo").innerText =
-        "Supérfluo: R$ " + d.grupos['Supérfluo'];
-    });
+  localStorage.setItem("notas", JSON.stringify(historico));
 }
