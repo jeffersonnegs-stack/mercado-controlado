@@ -18,6 +18,26 @@
 <script src="script.js"></script>
 <script>
   carregarDashboard();
+
+  function carregarDashboard() {
+  const historico = JSON.parse(localStorage.getItem("notas")) || [];
+
+  let totais = {
+    essenciais: 0,
+    complementares: 0,
+    superfluos: 0
+  };
+
+  historico.forEach(nota => {
+    totais.essenciais += nota.essenciais || 0;
+    totais.complementares += nota.complementares || 0;
+    totais.superfluos += nota.superfluos || 0;
+  });
+
+  console.log(totais);
+}
+
+carregarDashboard();
 </script>
 
 </body>
