@@ -1,43 +1,555 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>NFC-e</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NotaFacil">
+<meta name="theme-color" content="#050912">
+<title>NotaFacil</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050912;--bg2:#0b1220;--bg3:#111c2e;--bg4:#162138;--lime:#c6f135;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--text:#f0f6ff;--muted:#64748b;--muted2:#94a3b8;--bdr:rgba(255,255,255,0.06);--r:20px;--H:'Syne',sans-serif;--B:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--B);overflow:hidden}
+#splash{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;animation:splashOut 0.5s ease 2.4s forwards}
+@keyframes splashOut{to{opacity:0;pointer-events:none}}
+.sp-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;animation:spIn 0.6s cubic-bezier(.2,0,.2,1) 0.3s both}
+@keyframes spIn{from{opacity:0;transform:scale(0.85) translateY(24px)}to{opacity:1;transform:none}}
+.sp-icon{width:96px;height:96px;background:var(--lime);border-radius:28px;display:flex;align-items:center;justify-content:center;animation:iconPulse 1.6s ease-in-out 0.8s infinite}
+@keyframes iconPulse{0%,100%{box-shadow:0 0 0 0 rgba(198,241,53,0.4)}50%{box-shadow:0 0 0 20px rgba(198,241,53,0)}}
+.sp-icon svg{width:52px;height:52px}
+.sp-name{font-family:var(--H);font-size:38px;font-weight:800;letter-spacing:-1px}
+.sp-name b{color:var(--lime)}
+.sp-tag{font-size:12px;color:var(--muted2);letter-spacing:2.5px;text-transform:uppercase;animation:spIn 0.6s ease 0.8s both}
+.sp-bar{width:140px;height:2px;background:var(--bg3);border-radius:99px;overflow:hidden;animation:spIn 0.5s ease 1.1s both}
+.sp-fill{height:100%;background:var(--lime);border-radius:99px;animation:fillBar 1.9s cubic-bezier(.4,0,.2,1) 1.1s forwards;width:0}
+@keyframes fillBar{to{width:100%}}
+#app{height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative}
+.tela{flex:1;overflow-y:auto;padding:0 0 76px;display:none;flex-direction:column}
+.tela.ativa{display:flex}
+.tb{display:flex;flex-direction:column;gap:12px;padding:12px 16px}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:100;background:rgba(9,15,28,0.97);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom)}
+.nb{display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;gap:3px;border:none;background:transparent;cursor:pointer;color:var(--muted);font-family:var(--B);font-size:10px;font-weight:500;transition:color 0.2s;position:relative}
+.nb-i{font-size:19px;transition:transform 0.2s}
+.nb.ativo{color:var(--lime)}
+.nb.ativo .nb-i{transform:scale(1.2);filter:drop-shadow(0 0 6px rgba(198,241,53,0.7))}
+.nb.ativo::before{content:'';position:absolute;top:0;left:30%;right:30%;height:2px;background:var(--lime);border-radius:0 0 3px 3px}
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
+.card-lbl{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}
+.scan-top{padding:20px 16px 12px;display:flex;align-items:center;justify-content:space-between}
+.scan-logo{font-family:var(--H);font-size:26px;font-weight:800}
+.scan-logo b{color:var(--lime)}
+.cpill{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;background:rgba(198,241,53,0.1);border:1px solid rgba(198,241,53,0.2);font-size:12px;font-weight:600;color:var(--lime)}
+.cdot{width:6px;height:6px;border-radius:50%;background:var(--lime);animation:blink 2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+#scanner-wrap{margin:0 16px;border-radius:24px;overflow:hidden;background:var(--bg2);position:relative;aspect-ratio:1;border:1px solid var(--bdr);box-shadow:0 24px 80px rgba(0,0,0,0.6)}
+#video{width:100%;height:100%;object-fit:cover;display:none}
+#placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.ph-ring{width:88px;height:88px;border-radius:50%;border:2px dashed rgba(198,241,53,0.25);display:flex;align-items:center;justify-content:center;font-size:38px;animation:rotateSlow 12s linear infinite}
+@keyframes rotateSlow{to{transform:rotate(360deg)}}
+#placeholder p{font-size:14px;color:var(--muted2);text-align:center;padding:0 32px;line-height:1.6}
+#frame-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+.sf{width:56%;aspect-ratio:1;position:relative}
+.sf::before,.sf::after,.sf-br,.sf-bl{content:'';position:absolute;width:22px;height:22px;border-color:var(--lime);border-style:solid;filter:drop-shadow(0 0 6px rgba(198,241,53,0.9))}
+.sf::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:5px 0 0 0}
+.sf::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 5px 0 0}
+.sf-br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 5px 0}
+.sf-bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 5px}
+.sf-line{position:absolute;left:0;right:0;height:2px;top:0;background:linear-gradient(90deg,transparent,var(--lime),transparent);animation:scanAnim 2s ease-in-out infinite;box-shadow:0 0 14px rgba(198,241,53,0.8)}
+@keyframes scanAnim{0%{top:4px;opacity:1}88%{top:calc(100% - 4px);opacity:1}100%{top:calc(100% - 4px);opacity:0}}
+#sbox{margin:12px 16px 0;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;transition:border-color 0.3s,background 0.3s}
+#sbox.ok{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.06)}
+#sbox.error{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.06)}
+#sbox.warn{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.06)}
+#sbox.load{border-color:rgba(198,241,53,0.2)}
+#sico{font-size:28px;flex-shrink:0}
+#stit{font-size:15px;font-weight:700}
+#smsg{font-size:12px;color:var(--muted2);margin-top:2px;line-height:1.4}
+#btnmain{margin:12px 16px 0;width:calc(100% - 32px);padding:18px;border-radius:var(--r);border:none;font-size:16px;font-weight:700;font-family:var(--H);cursor:pointer;background:var(--lime);color:var(--bg);box-shadow:0 8px 32px rgba(198,241,53,0.2);transition:opacity 0.15s,transform 0.1s}
+#btnmain:active{opacity:0.9;transform:scale(0.98)}
+#btnmain.stop{background:var(--bg3);color:var(--muted2);border:1px solid var(--bdr);box-shadow:none}
+#scanhist{display:flex;flex-direction:column;gap:7px;padding:12px 16px 0}
+.hi{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--bg2);border-radius:12px;border:1px solid var(--bdr);font-size:12px;color:var(--muted2)}
+.hdot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.hdot.dup{background:var(--amber)}
+.hi span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-hero{padding:28px 20px 22px;position:relative;overflow:hidden;background:linear-gradient(145deg,#0c1e3a 0%,#060f20 100%)}
+.dash-hero::before{content:'';position:absolute;top:-80px;right:-80px;width:260px;height:260px;background:radial-gradient(circle,rgba(198,241,53,0.06) 0%,transparent 65%);pointer-events:none}
+.dh-lbl{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:2px}
+.dh-val{font-family:var(--H);font-size:46px;font-weight:800;letter-spacing:-2px;line-height:1;margin:6px 0 2px}
+.dh-val .rs{font-size:24px;color:var(--muted2);vertical-align:super}
+.dh-sub{font-size:13px;color:var(--muted2)}
+.dh-chips{display:flex;gap:8px;margin-top:14px}
+.chip-lime{display:inline-flex;padding:4px 11px;border-radius:99px;font-size:11px;font-weight:600;background:rgba(198,241,53,0.12);color:var(--lime);border:1px solid rgba(198,241,53,0.2)}
+.grow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gcard{border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--bdr);background:var(--bg2)}
+.gdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.gnome{font-size:11px;font-weight:600;color:var(--muted2)}
+.gval{font-family:var(--H);font-size:15px;font-weight:800}
+.gpct{font-size:10px;color:var(--muted2)}
+.gbar{height:3px;border-radius:99px;background:var(--bg3);overflow:hidden;margin-top:2px}
+.gbarf{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.mrow{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid var(--bdr);cursor:pointer;gap:12px;border-radius:12px}
+.mrow:last-child{border-bottom:none}
+.mrow:active{background:var(--bg3)}
+.mdot{width:8px;height:8px;border-radius:50%;background:var(--lime);flex-shrink:0}
+.minfo{flex:1}
+.mnome{font-size:14px;font-weight:600}
+.msub{font-size:11px;color:var(--muted2);margin-top:1px}
+.mright{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.mval{font-family:var(--H);font-size:15px;font-weight:800;color:var(--lime)}
+.marrow{font-size:11px;color:var(--muted)}
+.ins-head{padding:22px 16px 4px}
+.ins-title{font-family:var(--H);font-size:28px;font-weight:800}
+.ins-sub{font-size:13px;color:var(--muted2);margin-top:2px}
+.icard{display:flex;align-items:flex-start;gap:14px;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:16px}
+.icard.alerta{border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.04)}
+.icard.economia{border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.04)}
+.icard.info{border-color:rgba(198,241,53,0.15)}
+.iico{font-size:26px;flex-shrink:0;margin-top:1px}
+.itxt{font-size:14px;line-height:1.6;color:var(--text)}
+.hist-head{padding:22px 16px 4px}
+.hist-title{font-family:var(--H);font-size:28px;font-weight:800}
+.nitem{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;cursor:pointer;transition:border-color 0.2s,transform 0.15s;overflow:hidden;position:relative}
+.nitem::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--lime);border-radius:0 3px 3px 0;transform:scaleY(0);transition:transform 0.2s}
+.nitem:active{transform:scale(0.99);border-color:rgba(198,241,53,0.3)}
+.nitem:active::before{transform:scaleY(1)}
+.ntop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.nnome{font-size:15px;font-weight:700;flex:1}
+.nval{font-family:var(--H);font-size:16px;font-weight:800;color:var(--lime);white-space:nowrap}
+.nmeta{font-size:12px;color:var(--muted2);margin-top:4px}
+.ntags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#modover{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:none;align-items:flex-end}
+#modover.open{display:flex}
+#modal{background:var(--bg2);border-radius:28px 28px 0 0;width:100%;max-height:86vh;overflow-y:auto;border-top:1px solid var(--bdr);animation:slideUp 0.32s cubic-bezier(.2,0,.2,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mdrag{width:36px;height:3px;background:var(--bg4);border-radius:99px;margin:14px auto 0}
+.mdhd{padding:18px 20px 14px;border-bottom:1px solid var(--bdr)}
+.mdtit{font-family:var(--H);font-size:22px;font-weight:800}
+.mdsub{font-size:13px;color:var(--muted2);margin-top:3px}
+.mdtot{font-family:var(--H);font-size:36px;color:var(--lime);padding:16px 20px 12px;border-bottom:1px solid var(--bdr)}
+.gsec{padding:14px 20px 0}
+.gsectit{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-bottom:10px}
+.gsdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.gstot{margin-left:auto;font-family:var(--H);font-size:14px}
+.crow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);font-size:13px}
+.crow:last-child{border-bottom:none;padding-bottom:14px}
+.cname{color:var(--muted2)}
+.mnhd{padding:18px 20px 14px;border-bottom:1px solid var(--bdr)}
+.mnemit{font-family:var(--H);font-size:20px;font-weight:800}
+.mnsub{font-size:12px;color:var(--muted2);margin-top:3px}
+.mntot{font-family:var(--H);font-size:36px;color:var(--lime);padding:16px 20px 12px;border-bottom:1px solid var(--bdr)}
+.mnlbl{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:1.5px;padding:14px 20px 8px}
+.irow{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;border-bottom:1px solid var(--bdr);gap:12px}
+.irow:last-child{border-bottom:none}
+.idesc{font-size:14px;font-weight:500}
+.icat{font-size:11px;color:var(--muted2);margin-top:2px}
+.iprice{font-size:14px;font-weight:700;color:var(--lime);white-space:nowrap}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(198,241,53,0.2);border-top-color:var(--lime);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+.bspin{width:30px;height:30px;border:3px solid rgba(198,241,53,0.12);border-top-color:var(--lime);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ldg{display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 20px;color:var(--muted2);font-size:13px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted2);font-size:14px;line-height:1.6}
+.eico{font-size:44px;margin-bottom:12px;opacity:0.25}
+::-webkit-scrollbar{width:0}
+</style>
 </head>
 <body>
-
-<h2>📷 Ler Nota Fiscal</h2>
-
-<video id="camera" width="300" autoplay></video>
-
-<br><br>
-
-<input id="url" placeholder="URL da nota">
-<button onclick="enviar()">Enviar Nota</button>
-
-<script src="script.js"></script>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-
+<div id="splash">
+  <div class="sp-wrap">
+    <div class="sp-icon">
+      <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="4" width="28" height="36" rx="4" fill="#050912"/>
+        <path d="M14 14h16M14 20h16M14 26h10" stroke="#c6f135" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="38" cy="36" r="9" fill="#c6f135"/>
+        <path d="M34 36l2.5 2.5L42 33" stroke="#050912" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="sp-name">Nota<b>Facil</b></div>
+  </div>
+  <div class="sp-tag">Controle financeiro inteligente</div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+<div id="app">
+  <div id="tela-scanner" class="tela ativa">
+    <div class="scan-top">
+      <div class="scan-logo">Nota<b>Facil</b></div>
+      <div class="cpill"><div class="cdot"></div><span id="counter">0 notas</span></div>
+    </div>
+    <div id="scanner-wrap">
+      <div id="placeholder">
+        <div class="ph-ring">&#x1F9FE;</div>
+        <p>Toque em Iniciar e aponte para o QR Code do cupom fiscal</p>
+      </div>
+      <video id="video" autoplay playsinline muted></video>
+      <div id="frame-overlay"><div class="sf"><div class="sf-br"></div><div class="sf-bl"></div><div class="sf-line"></div></div></div>
+    </div>
+    <div id="sbox">
+      <div id="sico">&#x1F3AF;</div>
+      <div><div id="stit">Pronto para escanear</div><div id="smsg">Aponte para o QR Code da nota fiscal</div></div>
+    </div>
+    <button id="btnmain" onclick="toggleScan()">&#9654; INICIAR SCANNER</button>
+    <div id="scanhist"></div>
+  </div>
+  <div id="tela-dash" class="tela">
+    <div class="dash-hero">
+      <div class="dh-lbl">Total do mes</div>
+      <div class="dh-val"><span class="rs">R$</span> <span id="dash-total">--</span></div>
+      <div class="dh-sub" id="dash-notas">Carregando...</div>
+      <div class="dh-chips"><span class="chip-lime" id="dash-periodo">--</span></div>
+    </div>
+    <div class="tb">
+      <div class="card">
+        <div class="card-lbl">Distribuicao de gastos</div>
+        <div class="grow" id="dash-grupos"><div class="ldg" style="grid-column:1/-1"><div class="bspin"></div></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card" style="padding:16px">
+          <div class="card-lbl">Score</div>
+          <div id="dash-score" style="font-family:var(--H);font-size:32px;font-weight:800;color:var(--lime)">--</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px">de 100 pontos</div>
+        </div>
+        <div class="card" style="padding:16px">
+          <div class="card-lbl">Previsao do mes</div>
+          <div id="dash-previsao" style="font-family:var(--H);font-size:20px;font-weight:800;color:var(--amber)">--</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px">estimativa</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-lbl">Historico mensal <span style="font-size:10px;color:var(--muted)">toque para detalhar</span></div>
+        <div id="dash-hist"><div class="ldg"><div class="bspin"></div></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="tela-insights" class="tela">
+    <div class="ins-head"><div class="ins-title">Insights</div><div class="ins-sub">Analise inteligente do seu consumo</div></div>
+    <div class="tb" id="insights-list"><div class="ldg"><div class="bspin"></div>Analisando seus dados...</div></div>
+  </div>
+  <div id="tela-hist" class="tela">
+    <div class="hist-head"><div class="hist-title">Notas</div><div class="ins-sub">Historico de compras</div></div>
+    <div class="tb" id="hist-list"><div class="ldg"><div class="bspin"></div>Carregando notas...</div></div>
+  </div>
+  <nav>
+    <button class="nb ativo" onclick="irPara('scanner',this)"><span class="nb-i">&#x1F4F7;</span>Scanner</button>
+    <button class="nb" onclick="irPara('dash',this)"><span class="nb-i">&#x1F4CA;</span>Dashboard</button>
+    <button class="nb" onclick="irPara('insights',this)"><span class="nb-i">&#x1F4A1;</span>Insights</button>
+    <button class="nb" onclick="irPara('hist',this)"><span class="nb-i">&#x1F9FE;</span>Notas</button>
+  </nav>
+</div>
+<div id="modover" onclick="fecharModal(event)">
+  <div id="modal"><div class="mdrag"></div><div id="modcont"></div></div>
+</div>
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-  function iniciarScanner() {
-    const scanner = new Html5Qrcode("camera");
+var API = 'https://script.google.com/macros/s/AKfycbxTeyZZIdIml2DRufK8jCDe1ZP8g4bsgVuiV4FhuTQ0jw-x-qF_25GcPttYYjxAlzWt_Q/exec';
+var GC = { Essencial: '#22c55e', Complementar: '#f59e0b', Superfluo: '#ef4444' };
+var MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+var carregado = {};
 
-    scanner.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: 250
-      },
-      (decodedText) => {
-        document.getElementById("url").value = decodedText;
-        scanner.stop();
-      }
-    );
+function irPara(id, btn) {
+  document.querySelectorAll('.tela').forEach(function(t){ t.classList.remove('ativa'); });
+  document.querySelectorAll('.nb').forEach(function(b){ b.classList.remove('ativo'); });
+  document.getElementById('tela-' + id).classList.add('ativa');
+  btn.classList.add('ativo');
+  if (!carregado[id]) {
+    carregado[id] = true;
+    if (id === 'dash') carregarDash();
+    if (id === 'insights') carregarInsights();
+    if (id === 'hist') carregarHist();
   }
+}
 
-  iniciarScanner();
+var stream = null, scanning = false, raf = null, count = 0;
+var canvas = document.createElement('canvas');
+var ctx = canvas.getContext('2d', { willReadFrequently: true });
+var video = document.getElementById('video');
+
+function setSt(type, icon, title, msg) {
+  var b = document.getElementById('sbox');
+  b.className = type;
+  document.getElementById('sico').innerHTML = icon;
+  document.getElementById('stit').textContent = title;
+  document.getElementById('smsg').innerHTML = msg;
+}
+
+function toggleScan() {
+  if (scanning || stream) stopScan(); else startScan();
+}
+
+function startScan() {
+  setSt('load', '&#x23F3;', 'Abrindo camera...', 'Aguarde um momento');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })
+    .then(function(s) {
+      stream = s;
+      video.srcObject = stream;
+      video.onloadedmetadata = function() {
+        video.play();
+        video.style.display = 'block';
+        document.getElementById('placeholder').style.display = 'none';
+        document.getElementById('frame-overlay').style.display = 'flex';
+      };
+      document.getElementById('btnmain').textContent = 'PARAR SCANNER';
+      document.getElementById('btnmain').classList.add('stop');
+      scanning = true;
+      setSt('load', '&#x1F50D;', 'Escaneando...', 'Aponte para o QR Code da nota');
+      scanLoop();
+    })
+    .catch(function() {
+      setSt('error', '&#x274C;', 'Erro na camera', 'Verifique as permissoes do navegador');
+    });
+}
+
+function stopScan() {
+  scanning = false;
+  if (raf) cancelAnimationFrame(raf);
+  if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  video.style.display = 'none';
+  document.getElementById('placeholder').style.display = 'flex';
+  document.getElementById('frame-overlay').style.display = 'none';
+  document.getElementById('btnmain').textContent = '&#9654; INICIAR SCANNER';
+  document.getElementById('btnmain').classList.remove('stop');
+  setSt('', '&#x1F3AF;', 'Pronto para escanear', 'Aponte para o QR Code da nota fiscal');
+}
+
+function scanLoop() {
+  if (!scanning) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    try {
+      var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data && code.data.indexOf('http') === 0) {
+        scanning = false;
+        handleQR(code.data);
+        return;
+      }
+    } catch(e) {}
+  }
+  raf = requestAnimationFrame(scanLoop);
+}
+
+function handleQR(url) {
+  stopScan();
+  setSt('load', '<span class="spin"></span>', 'QR lido!', 'Salvando e classificando...');
+  fetch(API + '?acao=salvar&url=' + encodeURIComponent(url))
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.status === 'ok') {
+        count++;
+        document.getElementById('counter').textContent = count + (count === 1 ? ' nota' : ' notas');
+        setSt('ok', '&#x2705;', 'Nota salva!', 'Produtos classificados por grupo!');
+        addHist(url, false);
+        carregado['dash'] = false; carregado['insights'] = false; carregado['hist'] = false;
+      } else if (data.status === 'duplicado') {
+        setSt('warn', '&#x26A0;&#xFE0F;', 'Nota duplicada', 'Esta nota ja foi registrada.');
+        addHist(url, true);
+      } else {
+        setSt('error', '&#x274C;', 'Erro ao salvar', 'Tente escanear novamente.');
+      }
+    })
+    .catch(function() {
+      setSt('error', '&#x274C;', 'Sem conexao', 'Verifique sua internet.');
+    });
+}
+
+function addHist(url, dup) {
+  var hist = document.getElementById('scanhist');
+  var el = document.createElement('div');
+  el.className = 'hi';
+  var s = url.length > 48 ? url.substring(0, 48) + '...' : url;
+  el.innerHTML = '<div class="hdot' + (dup ? ' dup' : '') + '"></div><span>' + s + '</span>';
+  hist.insertBefore(el, hist.firstChild);
+  while (hist.children.length > 3) hist.removeChild(hist.lastChild);
+}
+
+function carregarDash() {
+  fetch(API + '?acao=relatorio')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.status !== 'ok') return;
+      var parts = data.mesAtual.split('-');
+      document.getElementById('dash-periodo').textContent = MESES[parseInt(parts[1])-1] + ' ' + parts[0];
+      var total = data.totalMesAtual || 0;
+      var tf = total.toFixed(2).split('.');
+      document.getElementById('dash-total').textContent = parseInt(tf[0]).toLocaleString('pt-BR') + ',' + tf[1];
+      document.getElementById('dash-notas').textContent = (data.notasMesAtual || 0) + ' notas escaneadas';
+
+      if (data.score !== undefined) {
+        document.getElementById('dash-score').textContent = data.score;
+        var scoreEl = document.getElementById('dash-score');
+        if (data.score >= 80) scoreEl.style.color = 'var(--green)';
+        else if (data.score >= 60) scoreEl.style.color = 'var(--amber)';
+        else scoreEl.style.color = 'var(--red)';
+      }
+
+      var hoje = new Date().getDate();
+      if (data.totalMesAtual > 0 && hoje > 0) {
+        var previsao = (data.totalMesAtual / hoje) * 30;
+        document.getElementById('dash-previsao').textContent = 'R$ ' + previsao.toFixed(2).replace('.', ',');
+      }
+
+      var grupos = data.grupos || { Essencial: 0, Complementar: 0, Superfluo: 0 };
+      var tg = Object.values(grupos).reduce(function(a,b){ return a+b; }, 0) || 1;
+      var html = '';
+      Object.keys(grupos).forEach(function(nome) {
+        var val = grupos[nome];
+        var cor = GC[nome] || '#64748b';
+        var pct = Math.round(val / tg * 100);
+        html += '<div class="gcard">' +
+          '<div style="display:flex;align-items:center;gap:6px"><div class="gdot" style="background:' + cor + '"></div><div class="gnome">' + nome + '</div></div>' +
+          '<div class="gval" style="color:' + cor + '">R$ ' + val.toFixed(2).replace('.', ',') + '</div>' +
+          '<div class="gpct">' + pct + '% do total</div>' +
+          '<div class="gbar"><div class="gbarf" style="width:' + pct + '%;background:' + cor + '"></div></div>' +
+          '</div>';
+      });
+      document.getElementById('dash-grupos').innerHTML = html || '<div class="ldg" style="grid-column:1/-1">Sem dados</div>';
+
+      var hist = Object.entries(data.historico || {}).sort(function(a,b){ return b[0].localeCompare(a[0]); }).slice(0, 6);
+      if (!hist.length) {
+        document.getElementById('dash-hist').innerHTML = '<div class="empty"><div class="eico">&#x1F4C5;</div>Nenhum historico ainda</div>';
+      } else {
+        var hhtml = '';
+        hist.forEach(function(entry) {
+          var chave = entry[0], info = entry[1];
+          var p = chave.split('-');
+          var nm = MESES[parseInt(p[1])-1] + ' ' + p[0];
+          hhtml += '<div class="mrow" onclick="abrirDetalhe(\'' + chave + '\',\'' + nm + '\',' + info.total.toFixed(2) + ')">' +
+            '<div class="mdot"></div>' +
+            '<div class="minfo"><div class="mnome">' + nm + '</div><div class="msub">' + info.notas + ' nota' + (info.notas !== 1 ? 's' : '') + '</div></div>' +
+            '<div class="mright"><div class="mval">R$ ' + info.total.toFixed(2).replace('.', ',') + '</div><div class="marrow">ver detalhes &#x203A;</div></div>' +
+            '</div>';
+        });
+        document.getElementById('dash-hist').innerHTML = hhtml;
+      }
+    })
+    .catch(function() {
+      document.getElementById('dash-grupos').innerHTML = '<div class="empty" style="grid-column:1/-1">Erro ao carregar.</div>';
+    });
+}
+
+function abrirDetalhe(mes, nome, total) {
+  document.getElementById('modcont').innerHTML =
+    '<div class="mdhd"><div class="mdtit">' + nome + '</div><div class="mdsub">Detalhamento por grupo</div></div>' +
+    '<div class="mdtot">R$ ' + parseFloat(total).toFixed(2).replace('.', ',') + '</div>' +
+    '<div class="ldg"><div class="bspin"></div>Carregando...</div>';
+  document.getElementById('modover').classList.add('open');
+
+  fetch(API + '?acao=detalhe&mes=' + mes)
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.status !== 'ok') return;
+      var html = '';
+      Object.keys(data.grupos || {}).forEach(function(grupo) {
+        var info = data.grupos[grupo];
+        var cor = GC[grupo] || '#64748b';
+        var cats = Object.entries(info.categorias || {}).sort(function(a,b){ return b[1]-a[1]; });
+        if (info.total === 0 && !cats.length) return;
+        html += '<div class="gsec">' +
+          '<div class="gsectit"><div class="gsdot" style="background:' + cor + '"></div><span>' + grupo + '</span>' +
+          '<div class="gstot" style="color:' + cor + '">R$ ' + info.total.toFixed(2).replace('.', ',') + '</div></div>' +
+          cats.map(function(c){ return '<div class="crow"><span class="cname">' + c[0] + '</span><span>R$ ' + c[1].toFixed(2).replace('.', ',') + '</span></div>'; }).join('') +
+          '</div>';
+      });
+      document.getElementById('modcont').innerHTML =
+        '<div class="mdhd"><div class="mdtit">' + nome + '</div><div class="mdsub">Detalhamento por grupo</div></div>' +
+        '<div class="mdtot">R$ ' + parseFloat(total).toFixed(2).replace('.', ',') + '</div>' +
+        (html || '<div class="empty">Nenhum dado disponivel</div>');
+    })
+    .catch(function(){});
+}
+
+function carregarInsights() {
+  var el = document.getElementById('insights-list');
+  fetch(API + '?acao=insights')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.status !== 'ok' || !data.insights.length) {
+        el.innerHTML = '<div class="empty"><div class="eico">&#x1F4A1;</div>Escaneie mais notas para ver insights!</div>';
+        return;
+      }
+      var total = data.totalAtual || 0;
+      var g = data.grupoAtual || {};
+      var resumo = '';
+      if (total > 0) {
+        var rows = '';
+        Object.keys(g).forEach(function(nome) {
+          var val = g[nome];
+          var cor = GC[nome] || '#64748b';
+          var pct = total > 0 ? Math.round(val / total * 100) : 0;
+          rows += '<div style="display:flex;align-items:center;gap:10px">' +
+            '<div style="width:10px;height:10px;border-radius:50%;background:' + cor + ';flex-shrink:0"></div>' +
+            '<div style="flex:1;font-size:13px">' + nome + '</div>' +
+            '<div style="font-size:13px;font-weight:700;color:' + cor + '">R$ ' + val.toFixed(2).replace('.', ',') +
+            ' <span style="font-size:11px;color:var(--muted2)">(' + pct + '%)</span></div></div>';
+        });
+        resumo = '<div class="card"><div class="card-lbl">Este mes em resumo</div><div style="display:flex;flex-direction:column;gap:8px">' + rows + '</div></div>';
+      }
+      el.innerHTML = resumo + data.insights.map(function(ins) {
+        return '<div class="icard ' + ins.tipo + '"><div class="iico">' + ins.icone + '</div><div class="itxt">' + ins.mensagem + '</div></div>';
+      }).join('');
+    })
+    .catch(function() { el.innerHTML = '<div class="empty">Erro ao carregar insights.</div>'; });
+}
+
+function carregarHist() {
+  var el = document.getElementById('hist-list');
+  fetch(API + '?acao=historico')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.status !== 'ok' || !data.notas.length) {
+        el.innerHTML = '<div class="empty"><div class="eico">&#x1F9FE;</div>Nenhuma nota ainda.<br>Escaneie seu primeiro cupom!</div>';
+        return;
+      }
+      el.innerHTML = data.notas.map(function(nota) {
+        var dt = nota.data ? new Date(nota.data).toLocaleDateString('pt-BR') : '--';
+        var grupos = [];
+        (nota.itens || []).forEach(function(i){ if(i.grupo && grupos.indexOf(i.grupo)<0) grupos.push(i.grupo); });
+        var total = parseFloat(nota.total || 0).toFixed(2).replace('.', ',');
+        var tags = grupos.map(function(g) {
+          var cor = GC[g] || '#64748b';
+          return '<span style="display:inline-flex;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;background:' + cor + '20;color:' + cor + ';border:1px solid ' + cor + '30">' + g + '</span>';
+        }).join('');
+        var enc = encodeURIComponent(JSON.stringify(nota));
+        return '<div class="nitem" onclick="abrirNota(decodeURIComponent(\'' + enc + '\'))">' +
+          '<div class="ntop"><div class="nnome">' + (nota.emitente || 'Estabelecimento') + '</div><div class="nval">R$ ' + total + '</div></div>' +
+          '<div class="nmeta">' + dt + ' &middot; ' + (nota.itens || []).length + ' itens</div>' +
+          (tags ? '<div class="ntags">' + tags + '</div>' : '') + '</div>';
+      }).join('');
+    })
+    .catch(function() { el.innerHTML = '<div class="empty">Erro ao carregar historico.</div>'; });
+}
+
+function abrirNota(notaStr) {
+  var nota = JSON.parse(notaStr);
+  var total = parseFloat(nota.total || 0).toFixed(2).replace('.', ',');
+  var dt = nota.data ? new Date(nota.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '--';
+  var itens = nota.itens || [];
+  var ihtml = itens.map(function(it) {
+    var cor = GC[it.grupo] || '#64748b';
+    return '<div class="irow">' +
+      '<div style="flex:1"><div class="idesc">' + it.descricao + '</div>' +
+      '<div class="icat" style="color:' + cor + '">' + (it.grupo || '') + ' &middot; ' + (it.categoria || '') + ' &middot; ' + it.qtd + 'x R$ ' + parseFloat(it.valorUnit || 0).toFixed(2).replace('.', ',') + '</div></div>' +
+      '<div class="iprice">R$ ' + parseFloat(it.valorTotal || 0).toFixed(2).replace('.', ',') + '</div></div>';
+  }).join('');
+  document.getElementById('modcont').innerHTML =
+    '<div class="mnhd"><div class="mnemit">' + (nota.emitente || 'Estabelecimento') + '</div>' +
+    '<div class="mnsub">' + dt + (nota.cnpj ? ' &middot; ' + nota.cnpj : '') + '</div></div>' +
+    '<div class="mntot">R$ ' + total + '</div>' +
+    '<div class="mnlbl">' + itens.length + ' itens</div>' +
+    (ihtml || '<div class="empty">Detalhes nao disponiveis</div>');
+  document.getElementById('modover').classList.add('open');
+}
+
+function fecharModal(e) {
+  if (e.target === document.getElementById('modover'))
+    document.getElementById('modover').classList.remove('open');
+}
 </script>
-
 </body>
 </html>
