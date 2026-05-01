@@ -1,21 +1,43 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
   <meta charset="UTF-8">
   <title>NFC-e</title>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div class="container">
-    <h1>📊 Controle de Gastos</h1>
+<h2>📷 Ler Nota Fiscal</h2>
 
-    <input id="url" placeholder="Cole a URL da nota">
-    <button onclick="enviar()">Salvar Nota</button>
+<video id="camera" width="300" autoplay></video>
 
-    <button onclick="irDashboard()">Ver Dashboard</button>
-  </div>
+<br><br>
+
+<input id="url" placeholder="URL da nota">
+<button onclick="enviar()">Enviar Nota</button>
 
 <script src="script.js"></script>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+  function iniciarScanner() {
+    const scanner = new Html5Qrcode("camera");
+
+    scanner.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      (decodedText) => {
+        document.getElementById("url").value = decodedText;
+        scanner.stop();
+      }
+    );
+  }
+
+  iniciarScanner();
+</script>
+
 </body>
 </html>
