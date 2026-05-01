@@ -207,6 +207,18 @@ nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-w
         <div class="card-lbl">Distribuicao de gastos</div>
         <div class="grow" id="dash-grupos"><div class="ldg" style="grid-column:1/-1"><div class="bspin"></div></div></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card" style="padding:16px">
+          <div class="card-lbl">Score</div>
+          <div id="dash-score" style="font-family:var(--H);font-size:32px;font-weight:800;color:var(--lime)">--</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px">de 100 pontos</div>
+        </div>
+        <div class="card" style="padding:16px">
+          <div class="card-lbl">Previsao do mes</div>
+          <div id="dash-previsao" style="font-family:var(--H);font-size:20px;font-weight:800;color:var(--amber)">--</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px">estimativa</div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-lbl">Historico mensal <span style="font-size:10px;color:var(--muted)">toque para detalhar</span></div>
         <div id="dash-hist"><div class="ldg"><div class="bspin"></div></div></div>
@@ -367,6 +379,20 @@ function carregarDash() {
       var tf = total.toFixed(2).split('.');
       document.getElementById('dash-total').textContent = parseInt(tf[0]).toLocaleString('pt-BR') + ',' + tf[1];
       document.getElementById('dash-notas').textContent = (data.notasMesAtual || 0) + ' notas escaneadas';
+
+      if (data.score !== undefined) {
+        document.getElementById('dash-score').textContent = data.score;
+        var scoreEl = document.getElementById('dash-score');
+        if (data.score >= 80) scoreEl.style.color = 'var(--green)';
+        else if (data.score >= 60) scoreEl.style.color = 'var(--amber)';
+        else scoreEl.style.color = 'var(--red)';
+      }
+
+      var hoje = new Date().getDate();
+      if (data.totalMesAtual > 0 && hoje > 0) {
+        var previsao = (data.totalMesAtual / hoje) * 30;
+        document.getElementById('dash-previsao').textContent = 'R$ ' + previsao.toFixed(2).replace('.', ',');
+      }
 
       var grupos = data.grupos || { Essencial: 0, Complementar: 0, Superfluo: 0 };
       var tg = Object.values(grupos).reduce(function(a,b){ return a+b; }, 0) || 1;
