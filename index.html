@@ -550,6 +550,9 @@ function fecharModal(e) {
   if (e.target === document.getElementById('modover'))
     document.getElementById('modover').classList.remove('open');
 }
+  processarNota(qrCodeMessage).then(() => {
+  window.location.href = "dashboard.html";
+});
 </script>
 </body>
 </html>
