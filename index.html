@@ -8,6 +8,14 @@
 <meta name="apple-mobile-web-app-title" content="NFC-e Gestor">
 <meta name="theme-color" content="#060d1a">
 <title>NFC-e Gestor</title>
+<link rel="manifest" href="manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
