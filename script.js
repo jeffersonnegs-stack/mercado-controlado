@@ -21,6 +21,4 @@ function salvarDados(dados) {
 
   localStorage.setItem("notas", JSON.stringify(historico));
 }
-processarNota(qrCodeMessage).then(() => {
-  window.location.href = "dashboard.html";
-});
+
