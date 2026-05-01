@@ -1,7 +1,6 @@
 // ============================================================
-// NotaFácil — Apps Script v5
-// 3 grupos: Essenciais, Complementares, Supérfluos
-// Alertas inteligentes + detalhes por mês
+// NotaFacil — Apps Script v6
+// Performance + Score Financeiro + Previsao + Cache
 // ============================================================
 
 const CONFIG = {
@@ -16,44 +15,45 @@ const GRUPOS = {
   'Essencial': {
     cor: '#22c55e',
     categorias: {
-      'Hortifruti':       ['banana','maca','laranja','uva','tomate','alface','cebola','alho','batata','cenoura','brocolis','abobrinha','pepino','limao','mamao','abacaxi','melancia','melao','manga','morango','pera','uva','kiwi','couve','espinafre','repolho','beterraba','inhame','mandioca','aipim','chuchu','vagem','ervilha','milho verde','pimentao','berinjela','jiló','quiabo','acelga','rucula'],
-      'Açougue':          ['carne','frango','bovina','suina','peixe','file','costela','picanha','alcatra','patinho','contrafile','linguica','salsicha','presunto','bacon','atum','sardinha','tilapia','salmao','camarao','fraldinha','maminha','acem','paleta','pernil','lombo','peito frango','coxa','sobrecoxa','musculo','mocoto','bucho','figado','coracao'],
-      'Laticínios':       ['leite','queijo','iogurte','manteiga','creme de leite','requeijao','nata','margarina','ovo','ovos','mussarela','prato','coalho','ricota','cottage'],
-      'Mercearia Básica': ['arroz','feijao','oleo','sal','acucar','fuba','farinha','tapioca','macarrao','macarro','espaguete','fideo','lentilha','grao de bico','canjica','farinha de mandioca','flocao'],
-      'Água':             ['agua mineral','agua com gas','agua s/gas','gelo'],
+      'Hortifruti':       ['banana','maca','laranja','uva','tomate','alface','cebola','alho','batata','cenoura','brocolis','abobrinha','pepino','limao','mamao','abacaxi','melancia','melao','manga','morango','pera','kiwi','couve','espinafre','repolho','beterraba','inhame','mandioca','aipim','chuchu','vagem','ervilha','pimentao','berinjela','quiabo','acelga','rucula','jiló'],
+      'Acougue':          ['carne','frango','bovina','suina','peixe','file','costela','picanha','alcatra','patinho','contrafile','linguica','salsicha','presunto','bacon','atum','sardinha','tilapia','salmao','camarao','fraldinha','maminha','acem','paleta','pernil','lombo','coxa','sobrecoxa','musculo','mocoto','figado','coracao'],
+      'Laticinios':       ['leite','queijo','iogurte','manteiga','requeijao','nata','margarina','ovo','ovos','mussarela','coalho','ricota','cottage'],
+      'Mercearia Basica': ['arroz','feijao','oleo','sal','acucar','fuba','farinha','tapioca','macarrao','espaguete','fideo','lentilha','canjica','flocao'],
+      'Agua':             ['agua mineral','agua com gas','agua s','gelo'],
     }
   },
   'Complementar': {
     cor: '#f59e0b',
     categorias: {
-      'Padaria':          ['pao','bolo','torta','croissant','brioche','baguete','panetone','waffle','panqueca','bisnaguinha','pao de forma','pao frances','cuca'],
-      'Congelados':       ['pizza','nugget','lasanha','hamburguer','empanado','congelado','steak','batata frita','pao de queijo congelado','salgado congelado'],
-      'Enlatados':        ['lata','conserva','palmito','milho lata','ervilha lata','azeitona','extrato de tomate','molho de tomate','creme de coco','leite de coco','cogumelo'],
-      'Temperos e Molhos':['ketchup','mostarda','maionese','molho shoyu','molho inglês','vinagre','azeite','tempero','oregano','pimenta','curry','colorau','cominho','louro','canela','cravo','noz moscada','caldo knorr','sazon'],
-      'Bebidas':          ['suco','néctar','cha','cafe','achocolatado','leite condensado','creme','capuccino','nescau','toddy'],
-      'Saudáveis':        ['integral','organico','sem gluten','proteina','whey','granola','aveia','quinoa','chia','linhaça','amaranto','castanha','amendoim','pasta de amendoim','mel','geleia'],
+      'Padaria':          ['pao','bolo','torta','croissant','baguete','panetone','waffle','panqueca','bisnaguinha'],
+      'Congelados':       ['pizza','nugget','lasanha','hamburguer','empanado','congelado','steak','batata frita'],
+      'Enlatados':        ['palmito','azeitona','extrato de tomate','molho de tomate','creme de coco','leite de coco','cogumelo'],
+      'Temperos':         ['ketchup','mostarda','maionese','shoyu','vinagre','azeite','tempero','oregano','pimenta','curry','colorau','cominho','louro','canela','cravo','caldo','sazon'],
+      'Bebidas':          ['suco','nectar','cha','cafe','achocolatado','leite condensado','capuccino','nescau','toddy'],
+      'Saudaveis':        ['integral','organico','proteina','whey','granola','aveia','quinoa','chia','linhaca','amaranto','mel','geleia'],
     }
   },
-  'Supérfluo': {
+  'Superfluo': {
     cor: '#ef4444',
     categorias: {
-      'Doces':            ['chocolate','bala','chiclete','sorvete','gelatina','pudim','brigadeiro','docinho','pirulito','marshmallow','wafer','flocos','bombom','trufa','kit kat','bis','diamante negro','lacta','nestle'],
-      'Snacks':           ['salgadinho','chips','batata chips','ruffles','doritos','cheetos','forno de minas','pipoca','amendoim torrado','castanha de caju','nozes'],
-      'Refrigerantes':    ['refrigerante','coca cola','pepsi','guarana','fanta','sprite','schweppes','tonica','ginger','soda'],
-      'Energéticos':      ['energetico','red bull','monster','burn','fusion','shark','TNT'],
-      'Bebidas Alcoólicas':['cerveja','vinho','vodka','whisky','cachaca','rum','gin','espumante','chopp','long neck','skol','brahma','antartica','heineken','corona'],
+      'Doces':            ['chocolate','bala','chiclete','sorvete','gelatina','pudim','brigadeiro','pirulito','marshmallow','wafer','bombom','trufa','bis','lacta','nestle'],
+      'Snacks':           ['salgadinho','chips','ruffles','doritos','cheetos','pipoca'],
+      'Refrigerantes':    ['refrigerante','coca cola','pepsi','guarana','fanta','sprite','schweppes','tonica','soda'],
+      'Energeticos':      ['energetico','red bull','monster','burn','fusion','shark'],
+      'Bebidas Alcoolicas':['cerveja','vinho','vodka','whisky','cachaca','rum','gin','espumante','chopp','skol','brahma','heineken','corona'],
     }
   }
 };
 
-// Retorna { categoria, grupo }
+// ── CLASSIFICACAO MELHORADA ───────────────────────────────────
 function classificarProduto(descricao) {
   const desc = descricao.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const palavrasDesc = desc.split(/\s+/);
 
   for (const [grupo, info] of Object.entries(GRUPOS)) {
     for (const [categoria, palavras] of Object.entries(info.categorias)) {
-      if (palavras.some(p => desc.includes(p))) {
+      if (palavras.some(p => palavrasDesc.includes(p))) {
         return { categoria, grupo };
       }
     }
@@ -61,10 +61,42 @@ function classificarProduto(descricao) {
   return { categoria: 'Outros', grupo: 'Complementar' };
 }
 
+// ── SCORE FINANCEIRO ─────────────────────────────────────────
+function calcularScore(grupoAtual) {
+  const total = Object.values(grupoAtual).reduce((a,b)=>a+b, 0);
+  if (total === 0) return 100;
+  const pctSup = (grupoAtual['Superfluo'] / total) * 100;
+  const score = 100 - (pctSup * 1.5);
+  return Math.max(0, Math.round(score));
+}
+
+// ── CACHE DE DUPLICIDADE ─────────────────────────────────────
+function jaExisteChave(chave) {
+  try {
+    const cache = CacheService.getScriptCache();
+    if (cache.get(chave)) return true;
+  } catch(e) {}
+
+  const ss = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
+  const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
+  const lastRow = notas.getLastRow();
+  const dados = lastRow > 1
+    ? notas.getRange(2, 1, lastRow - 1, 1).getValues()
+    : [];
+
+  for (let i = 0; i < dados.length; i++) {
+    if (extrairChave(dados[i][0].toString()) === chave) {
+      try { CacheService.getScriptCache().put(chave, '1', 21600); } catch(e) {}
+      return true;
+    }
+  }
+  return false;
+}
+
 // ── MENU ────────────────────────────────────────────────────
 function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('🧾 NotaFácil')
+    .createMenu('NotaFacil')
     .addItem('Consultar nota selecionada', 'consultarNotaSelecionada')
     .addItem('Consultar todas pendentes',  'consultarTodasPendentes')
     .addSeparator()
@@ -82,24 +114,17 @@ function doGet(e) {
     if (acao === 'insights')  return getInsights(e);
     if (acao === 'detalhe')   return getDetalheMes(e);
 
-    // salvar nota
     const url = (e.parameter.url || '').toString().trim();
-    const ss    = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
-    const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
-    const log   = ss.getSheetByName(CONFIG.ABA_LOG);
+    const ss  = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
+    const log = ss.getSheetByName(CONFIG.ABA_LOG);
     log.appendRow([new Date(), 'GET', 'URL recebida', url]);
 
     if (!url || url.length < 10) return jsonOut({ status: 'erro', mensagem: 'URL vazia' });
 
-    // Verificar duplicata
     const chave = extrairChave(url);
-    const dados = notas.getDataRange().getValues();
-    for (let i = 1; i < dados.length; i++) {
-      if (dados[i][0] && extrairChave(dados[i][0].toString()) === chave) {
-        return jsonOut({ status: 'duplicado', mensagem: 'Nota já registrada' });
-      }
-    }
+    if (jaExisteChave(chave)) return jsonOut({ status: 'duplicado', mensagem: 'Nota ja registrada' });
 
+    const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
     const linha = notas.getLastRow() + 1;
     notas.getRange(linha, 1).setValue(url);
     const resultado = processarURL(url, linha);
@@ -112,51 +137,48 @@ function doGet(e) {
 
 function doPost(e) { return doGet(e); }
 
-// ── RELATÓRIO ─────────────────────────────────────────────────
+// ── RELATORIO ────────────────────────────────────────────────
 function getRelatorio(e) {
   try {
     const ss    = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
     const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
     const itens = ss.getSheetByName(CONFIG.ABA_ITENS);
-    const dadosNotas = notas.getDataRange().getValues();
-    const dadosItens = itens.getDataRange().getValues();
+
+    const lrNotas = notas.getLastRow();
+    const lrItens = itens.getLastRow();
+    const dadosNotas = lrNotas > 1 ? notas.getRange(2, 1, lrNotas - 1, 7).getValues() : [];
+    const dadosItens = lrItens > 1 ? itens.getRange(2, 1, lrItens - 1, 9).getValues() : [];
 
     const agora = new Date();
-    const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
+    const mesAtual = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
 
-    // Mapa chave → data da nota
     const mapaData = {};
-    for (let i = 1; i < dadosNotas.length; i++) {
+    for (let i = 0; i < dadosNotas.length; i++) {
       if (!dadosNotas[i][0]) continue;
       const ch = extrairChave(dadosNotas[i][0].toString());
       mapaData[ch] = dadosNotas[i][1];
     }
 
-    // Agrupa notas por mês
     const meses = {};
-    for (let i = 1; i < dadosNotas.length; i++) {
+    for (let i = 0; i < dadosNotas.length; i++) {
       const row = dadosNotas[i];
       if (!row[1]) continue;
       const data = new Date(row[1]);
       if (isNaN(data)) continue;
-      const chave = `${data.getFullYear()}-${String(data.getMonth()+1).padStart(2,'0')}`;
+      const chave = data.getFullYear() + '-' + String(data.getMonth()+1).padStart(2,'0');
       if (!meses[chave]) meses[chave] = { total: 0, notas: 0 };
       meses[chave].total += parseFloat(row[5]) || 0;
       meses[chave].notas++;
     }
 
-    // Grupos do mês atual
-    const grupos = { Essencial: 0, Complementar: 0, 'Supérfluo': 0 };
-
-    for (let i = 1; i < dadosItens.length; i++) {
+    const grupos = { Essencial: 0, Complementar: 0, Superfluo: 0 };
+    for (let i = 0; i < dadosItens.length; i++) {
       const row = dadosItens[i];
       if (!row[0]) continue;
-      const ch = row[0].toString();
-      const dataNota = mapaData[ch] ? new Date(mapaData[ch]) : null;
+      const dataNota = mapaData[row[0].toString()] ? new Date(mapaData[row[0].toString()]) : null;
       if (!dataNota || isNaN(dataNota)) continue;
-      const mesItem = `${dataNota.getFullYear()}-${String(dataNota.getMonth()+1).padStart(2,'0')}`;
+      const mesItem = dataNota.getFullYear() + '-' + String(dataNota.getMonth()+1).padStart(2,'0');
       if (mesItem !== mesAtual) continue;
-
       const grupo = row[4] || classificarProduto(row[2] || '').grupo;
       const val = parseFloat(row[7]) || 0;
       if (grupos[grupo] !== undefined) grupos[grupo] += val;
@@ -170,46 +192,47 @@ function getRelatorio(e) {
       notasMesAtual: meses[mesAtual] ? meses[mesAtual].notas : 0,
       historico: meses,
       grupos,
+      score: calcularScore(grupos),
     });
   } catch(err) {
     return jsonOut({ status: 'erro', mensagem: err.message });
   }
 }
 
-// ── DETALHE DO MÊS ───────────────────────────────────────────
+// ── DETALHE DO MES ───────────────────────────────────────────
 function getDetalheMes(e) {
   try {
-    const mes = (e.parameter.mes || '').toString().trim(); // ex: 2026-04
-    if (!mes) return jsonOut({ status: 'erro', mensagem: 'Mês não informado' });
+    const mes = (e.parameter.mes || '').toString().trim();
+    if (!mes) return jsonOut({ status: 'erro', mensagem: 'Mes nao informado' });
 
     const ss    = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
     const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
     const itens = ss.getSheetByName(CONFIG.ABA_ITENS);
-    const dadosNotas = notas.getDataRange().getValues();
-    const dadosItens = itens.getDataRange().getValues();
 
-    // Mapa chave → data
+    const lrNotas = notas.getLastRow();
+    const lrItens = itens.getLastRow();
+    const dadosNotas = lrNotas > 1 ? notas.getRange(2, 1, lrNotas - 1, 7).getValues() : [];
+    const dadosItens = lrItens > 1 ? itens.getRange(2, 1, lrItens - 1, 9).getValues() : [];
+
     const mapaData = {};
-    for (let i = 1; i < dadosNotas.length; i++) {
+    for (let i = 0; i < dadosNotas.length; i++) {
       if (!dadosNotas[i][0]) continue;
       const ch = extrairChave(dadosNotas[i][0].toString());
       mapaData[ch] = dadosNotas[i][1];
     }
 
-    // Agrupa por grupo → categoria → total
     const resultado = {
-      Essencial:     { total: 0, categorias: {} },
-      Complementar:  { total: 0, categorias: {} },
-      'Supérfluo':   { total: 0, categorias: {} },
+      Essencial:    { total: 0, categorias: {} },
+      Complementar: { total: 0, categorias: {} },
+      Superfluo:    { total: 0, categorias: {} },
     };
 
-    for (let i = 1; i < dadosItens.length; i++) {
+    for (let i = 0; i < dadosItens.length; i++) {
       const row = dadosItens[i];
       if (!row[0]) continue;
-      const ch = row[0].toString();
-      const dataNota = mapaData[ch] ? new Date(mapaData[ch]) : null;
+      const dataNota = mapaData[row[0].toString()] ? new Date(mapaData[row[0].toString()]) : null;
       if (!dataNota || isNaN(dataNota)) continue;
-      const mesItem = `${dataNota.getFullYear()}-${String(dataNota.getMonth()+1).padStart(2,'0')}`;
+      const mesItem = dataNota.getFullYear() + '-' + String(dataNota.getMonth()+1).padStart(2,'0');
       if (mesItem !== mes) continue;
 
       const classif = classificarProduto(row[2] || '');
@@ -217,10 +240,12 @@ function getDetalheMes(e) {
       const cat   = row[3] || classif.categoria;
       const val   = parseFloat(row[7]) || 0;
 
-      if (!resultado[grupo]) resultado['Complementar'].total += val;
-      else {
+      if (resultado[grupo]) {
         resultado[grupo].total += val;
         resultado[grupo].categorias[cat] = (resultado[grupo].categorias[cat] || 0) + val;
+      } else {
+        resultado['Complementar'].total += val;
+        resultado['Complementar'].categorias[cat] = (resultado['Complementar'].categorias[cat] || 0) + val;
       }
     }
 
@@ -230,23 +255,25 @@ function getDetalheMes(e) {
   }
 }
 
-// ── HISTÓRICO ────────────────────────────────────────────────
+// ── HISTORICO ────────────────────────────────────────────────
 function getHistorico(e) {
   try {
     const ss    = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
     const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
     const itens = ss.getSheetByName(CONFIG.ABA_ITENS);
-    const dadosNotas = notas.getDataRange().getValues();
-    const dadosItens = itens.getDataRange().getValues();
+
+    const lrNotas = notas.getLastRow();
+    const lrItens = itens.getLastRow();
+    const dadosNotas = lrNotas > 1 ? notas.getRange(2, 1, lrNotas - 1, 7).getValues() : [];
+    const dadosItens = lrItens > 1 ? itens.getRange(2, 1, lrItens - 1, 9).getValues() : [];
 
     const resultado = [];
-    for (let i = dadosNotas.length - 1; i >= 1; i--) {
+    for (let i = dadosNotas.length - 1; i >= 0; i--) {
       const row = dadosNotas[i];
       if (!row[0]) continue;
       const chave = extrairChave(row[0].toString());
-
       const itensDaNota = [];
-      for (let j = 1; j < dadosItens.length; j++) {
+      for (let j = 0; j < dadosItens.length; j++) {
         if (dadosItens[j][0] === chave) {
           const classif = classificarProduto(dadosItens[j][2] || '');
           itensDaNota.push({
@@ -259,12 +286,7 @@ function getHistorico(e) {
           });
         }
       }
-
-      resultado.push({
-        chave, data: row[1], cnpj: row[2],
-        emitente: row[3], uf: row[4], total: row[5], status: row[6],
-        itens: itensDaNota,
-      });
+      resultado.push({ chave, data: row[1], cnpj: row[2], emitente: row[3], uf: row[4], total: row[5], status: row[6], itens: itensDaNota });
       if (resultado.length >= 30) break;
     }
 
@@ -280,32 +302,34 @@ function getInsights(e) {
     const ss    = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
     const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
     const itens = ss.getSheetByName(CONFIG.ABA_ITENS);
-    const dadosNotas = notas.getDataRange().getValues();
-    const dadosItens = itens.getDataRange().getValues();
+
+    const lrNotas = notas.getLastRow();
+    const lrItens = itens.getLastRow();
+    const dadosNotas = lrNotas > 1 ? notas.getRange(2, 1, lrNotas - 1, 7).getValues() : [];
+    const dadosItens = lrItens > 1 ? itens.getRange(2, 1, lrItens - 1, 9).getValues() : [];
 
     const agora = new Date();
-    const mesAtual   = agora.getMonth();
-    const anoAtual   = agora.getFullYear();
+    const mesAtual    = agora.getMonth();
+    const anoAtual    = agora.getFullYear();
     const mesAnterior = mesAtual === 0 ? 11 : mesAtual - 1;
     const anoAnterior = mesAtual === 0 ? anoAtual - 1 : anoAtual;
 
     const mapaData = {};
-    for (let i = 1; i < dadosNotas.length; i++) {
+    for (let i = 0; i < dadosNotas.length; i++) {
       if (!dadosNotas[i][0]) continue;
       const ch = extrairChave(dadosNotas[i][0].toString());
       mapaData[ch] = dadosNotas[i][1];
     }
 
-    const grupoAtual    = { Essencial: 0, Complementar: 0, 'Supérfluo': 0 };
-    const grupoAnterior = { Essencial: 0, Complementar: 0, 'Supérfluo': 0 };
-    const catAtual    = {};
-    const catAnterior = {};
+    const grupoAtual    = { Essencial: 0, Complementar: 0, Superfluo: 0 };
+    const grupoAnterior = { Essencial: 0, Complementar: 0, Superfluo: 0 };
+    const catAtual      = {};
+    const catAnterior   = {};
 
-    for (let i = 1; i < dadosItens.length; i++) {
+    for (let i = 0; i < dadosItens.length; i++) {
       const row = dadosItens[i];
       if (!row[0]) continue;
-      const ch = row[0].toString();
-      const dataNota = mapaData[ch] ? new Date(mapaData[ch]) : null;
+      const dataNota = mapaData[row[0].toString()] ? new Date(mapaData[row[0].toString()]) : null;
       if (!dataNota || isNaN(dataNota)) continue;
 
       const classif = classificarProduto(row[2] || '');
@@ -325,74 +349,55 @@ function getInsights(e) {
     const insights = [];
     const totalAtual = Object.values(grupoAtual).reduce((a,b) => a+b, 0);
 
-    // Alerta supérfluos
+    // Alerta superfluo
     if (totalAtual > 0) {
-      const pctSuperfluo = (grupoAtual['Supérfluo'] / totalAtual) * 100;
-      if (pctSuperfluo >= 25) {
-        insights.push({
-          tipo: 'alerta',
-          icone: '🚨',
-          mensagem: `Atenção! ${pctSuperfluo.toFixed(0)}% dos seus gastos este mês são com itens supérfluos — R$ ${grupoAtual['Supérfluo'].toFixed(2).replace('.',',')}`,
-        });
-      } else if (pctSuperfluo >= 15) {
-        insights.push({
-          tipo: 'alerta',
-          icone: '⚠️',
-          mensagem: `Você gastou ${pctSuperfluo.toFixed(0)}% com supérfluos este mês. Fique de olho para não extrapolar!`,
-        });
-      }
-
-      // Parabéns se supérfluos < 10%
-      if (pctSuperfluo < 10 && totalAtual > 50) {
-        insights.push({
-          tipo: 'economia',
-          icone: '🏆',
-          mensagem: `Ótimo controle! Apenas ${pctSuperfluo.toFixed(0)}% dos gastos foram com itens supérfluos este mês.`,
-        });
+      const pctSup = (grupoAtual['Superfluo'] / totalAtual) * 100;
+      if (pctSup >= 25) {
+        insights.push({ tipo: 'alerta', icone: '🚨', mensagem: 'Atencao! ' + pctSup.toFixed(0) + '% dos seus gastos este mes sao com itens superfluous — R$ ' + grupoAtual['Superfluo'].toFixed(2) });
+      } else if (pctSup >= 15) {
+        insights.push({ tipo: 'alerta', icone: '⚠️', mensagem: 'Voce gastou ' + pctSup.toFixed(0) + '% com supérfluos este mes. Fique de olho!' });
+      } else if (pctSup < 10 && totalAtual > 50) {
+        insights.push({ tipo: 'economia', icone: '🏆', mensagem: 'Otimo controle! Apenas ' + pctSup.toFixed(0) + '% dos gastos foram com supérfluos.' });
       }
     }
 
-    // Comparação mês anterior por grupo
-    for (const grupo of ['Essencial', 'Complementar', 'Supérfluo']) {
+    // Score financeiro
+    const score = calcularScore(grupoAtual);
+    insights.push({ tipo: 'info', icone: '🎯', mensagem: 'Seu score financeiro e ' + score + '/100' });
+
+    // Previsao de gasto
+    const hoje = agora.getDate();
+    if (totalAtual > 0 && hoje > 0) {
+      const gastoMedio = totalAtual / hoje;
+      const previsao = gastoMedio * 30;
+      insights.push({ tipo: 'info', icone: '📊', mensagem: 'Se continuar assim, voce gastara cerca de R$ ' + previsao.toFixed(2) + ' este mes' });
+    }
+
+    // Comparacao mes anterior
+    for (const grupo of ['Essencial', 'Complementar', 'Superfluo']) {
       const atual = grupoAtual[grupo];
       const anterior = grupoAnterior[grupo];
       if (anterior > 0 && atual > 0) {
         const diff = ((atual - anterior) / anterior) * 100;
         if (diff > 25) {
-          insights.push({
-            tipo: 'alerta',
-            icone: '📈',
-            mensagem: `Gastos com ${grupo === 'Supérfluo' ? 'supérfluos' : grupo.toLowerCase()} subiram ${diff.toFixed(0)}% em relação ao mês passado`,
-          });
+          insights.push({ tipo: 'alerta', icone: '📈', mensagem: 'Gastos com ' + grupo.toLowerCase() + ' subiram ' + diff.toFixed(0) + '% em relacao ao mes passado' });
         } else if (diff < -15) {
-          insights.push({
-            tipo: 'economia',
-            icone: '💚',
-            mensagem: `Você economizou ${Math.abs(diff).toFixed(0)}% em ${grupo === 'Supérfluo' ? 'supérfluos' : grupo.toLowerCase()} comparado ao mês passado!`,
-          });
+          insights.push({ tipo: 'economia', icone: '💚', mensagem: 'Voce economizou ' + Math.abs(diff).toFixed(0) + '% em ' + grupo.toLowerCase() + ' comparado ao mes passado!' });
         }
       }
     }
 
-    // Maior categoria
-    const maiorCat = Object.entries(catAtual).sort((a,b) => b[1]-a[1])[0];
-    if (maiorCat) {
-      insights.push({
-        tipo: 'info',
-        icone: '📊',
-        mensagem: `Seu maior gasto este mês é ${maiorCat[0]}: R$ ${maiorCat[1].toFixed(2).replace('.',',')}`,
-      });
+    // Vilao do mes
+    const maior = Object.entries(catAtual).sort((a,b)=>b[1]-a[1])[0];
+    if (maior) {
+      insights.push({ tipo: 'alerta', icone: '🔥', mensagem: 'Seu maior gasto esta em ' + maior[0] + ': R$ ' + maior[1].toFixed(2) });
     }
 
     if (!insights.length) {
-      insights.push({
-        tipo: 'info',
-        icone: '📱',
-        mensagem: 'Continue escaneando suas notas para ver análises do seu consumo!',
-      });
+      insights.push({ tipo: 'info', icone: '📱', mensagem: 'Continue escaneando suas notas para ver analises do seu consumo!' });
     }
 
-    return jsonOut({ status: 'ok', insights, grupoAtual, grupoAnterior, totalAtual });
+    return jsonOut({ status: 'ok', insights, grupoAtual, grupoAnterior, totalAtual, score });
   } catch(err) {
     return jsonOut({ status: 'erro', mensagem: err.message });
   }
@@ -414,8 +419,8 @@ function processarURL(url, linhaNotas) {
     const code = resp.getResponseCode();
 
     if (code !== 200) {
-      gravarLog(url, 'ERRO', `HTTP ${code}`);
-      notas.getRange(linhaNotas, 7).setValue('❌ Erro HTTP');
+      gravarLog(url, 'ERRO', 'HTTP ' + code);
+      notas.getRange(linhaNotas, 7).setValue('Erro HTTP');
       return null;
     }
 
@@ -423,14 +428,14 @@ function processarURL(url, linhaNotas) {
     const cnpj  = extrairRegex(html, /\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);
     const nomeEmitente =
       extrairRegex(html, /class="NomeEmit"[^>]*>\s*([^<]+)/, 1) ||
-      extrairRegex(html, /id="u20"[^>]*>\s*([^<]+)/, 1)         ||
-      extrairRegex(html, /<h2[^>]*>\s*([^<]{5,60})<\/h2>/, 1)   || '';
+      extrairRegex(html, /id="u20"[^>]*>\s*([^<]+)/, 1) ||
+      extrairRegex(html, /<h2[^>]*>\s*([^<]{5,60})<\/h2>/, 1) || '';
 
     const dataRaw = extrairRegex(html, /(\d{2}\/\d{2}\/\d{4}[ T]\d{2}:\d{2}(:\d{2})?)/, 1) || '';
     let dataEmissao = '';
     if (dataRaw) {
       const partes = dataRaw.match(/(\d{2})\/(\d{2})\/(\d{4})[T ](\d{2}):(\d{2})/);
-      if (partes) dataEmissao = new Date(`${partes[3]}-${partes[2]}-${partes[1]}T${partes[4]}:${partes[5]}:00`);
+      if (partes) dataEmissao = new Date(partes[3]+'-'+partes[2]+'-'+partes[1]+'T'+partes[4]+':'+partes[5]+':00');
     }
 
     const valorTotal =
@@ -440,28 +445,31 @@ function processarURL(url, linhaNotas) {
     const produtos = extrairProdutos(html);
     if (!produtos.length) {
       gravarLog(url, 'ERRO', 'Nenhum produto encontrado.');
-      notas.getRange(linhaNotas, 7).setValue('❌ Sem itens');
+      notas.getRange(linhaNotas, 7).setValue('Sem itens');
       return null;
     }
 
     notas.getRange(linhaNotas, 2, 1, 6).setValues([[
       dataEmissao || '', cnpj || '', nomeEmitente || '', 'SP',
-      parseFloat((valorTotal||'0').replace(',','.')) || 0, '✅ OK',
+      parseFloat((valorTotal||'0').replace(',','.')) || 0, 'OK',
     ]]);
 
-    // Salva com categoria + grupo na coluna 4 e 5
     const linhasItens = produtos.map(p => {
       const classif = classificarProduto(p.descricao);
-      return [chave, p.codigo, p.descricao, classif.categoria, classif.grupo, p.qtd, p.valorUnit, p.valorTotal, p.unidade, '', ''];
+      return [chave, p.codigo, p.descricao, classif.categoria, classif.grupo, p.qtd, p.valorUnit, p.valorTotal, p.unidade];
     });
 
     itens.getRange(itens.getLastRow()+1, 1, linhasItens.length, linhasItens[0].length).setValues(linhasItens);
-    gravarLog(chave, 'OK', `${produtos.length} itens · R$ ${valorTotal}`);
+
+    // Salva chave no cache
+    try { CacheService.getScriptCache().put(chave, '1', 21600); } catch(e) {}
+
+    gravarLog(chave, 'OK', produtos.length + ' itens R$ ' + valorTotal);
     return { chave, emitente: nomeEmitente, total: valorTotal, itens: produtos.length };
 
   } catch(err) {
-    gravarLog(url, 'EXCEÇÃO', err.message);
-    notas.getRange(linhaNotas, 7).setValue('❌ Exceção');
+    gravarLog(url, 'EXCECAO', err.message);
+    notas.getRange(linhaNotas, 7).setValue('Excecao');
     return null;
   }
 }
@@ -526,24 +534,25 @@ function consultarNotaSelecionada() {
 function consultarTodasPendentes() {
   const ss    = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
   const notas = ss.getSheetByName(CONFIG.ABA_NOTAS);
-  const dados = notas.getDataRange().getValues();
+  const lrNotas = notas.getLastRow();
+  const dados = lrNotas > 1 ? notas.getRange(2, 1, lrNotas - 1, 7).getValues() : [];
   let count = 0;
-  for (let i = 1; i < dados.length; i++) {
+  for (let i = 0; i < dados.length; i++) {
     const url    = dados[i][0].toString().trim();
     const status = dados[i][6].toString().trim();
-    if (url.includes('nfce.fazenda') && status !== '✅ OK') {
-      processarURL(url, i+1);
+    if (url.includes('nfce.fazenda') && status !== 'OK') {
+      processarURL(url, i + 2);
       Utilities.sleep(2000);
       count++;
     }
   }
-  SpreadsheetApp.getUi().alert(`${count} nota(s) consultada(s).`);
+  SpreadsheetApp.getUi().alert(count + ' nota(s) consultada(s).');
 }
 function criarEstrutura() {
   const ss = SpreadsheetApp.openById(CONFIG.PLANILHA_ID);
   const abas = {
     '1_NOTAS': ['url_qrcode','data_emissao','cnpj_emitente','razao_social','uf','total_nf','status'],
-    '2_ITENS': ['chave_acesso','codigo','descricao','categoria','grupo','quantidade','valor_unit','valor_total','unidade','ean','obs'],
+    '2_ITENS': ['chave_acesso','codigo','descricao','categoria','grupo','quantidade','valor_unit','valor_total','unidade'],
     'LOG':     ['timestamp','referencia','status','mensagem'],
   };
   Object.entries(abas).forEach(([nome, cols]) => {
