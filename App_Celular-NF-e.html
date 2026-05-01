@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NFC-e Gestor">
+<meta name="theme-color" content="#060d1a">
+<title>NFC-e Gestor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #060d1a;
+  --bg2:       #0d1829;
+  --bg3:       #152035;
+  --cyan:      #00e5ff;
+  --cyan2:     #00b8d4;
+  --green:     #00e676;
+  --amber:     #ffab00;
+  --red:       #ff5252;
+  --text:      #e8f4f8;
+  --muted:     #607d8b;
+  --border:    rgba(0,229,255,0.12);
+  --radius:    18px;
+  --font-head: 'Space Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; overflow: hidden; }
+
+/* ── LAYOUT ── */
+#app { height: 100vh; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; position: relative; }
+
+/* ── TELAS ── */
+.tela { flex: 1; overflow-y: auto; padding: 20px 16px 90px; display: none; flex-direction: column; gap: 16px; }
+.tela.ativa { display: flex; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 12px 8px; gap: 4px; border: none; background: transparent;
+  cursor: pointer; color: var(--muted); font-family: var(--font-body); font-size: 11px;
+  transition: color 0.2s;
+}
+.nav-btn .ni { font-size: 22px; }
+.nav-btn.ativo { color: var(--cyan); }
+.nav-btn.ativo .ni { filter: drop-shadow(0 0 6px var(--cyan)); }
+
+/* ── HEADER ── */
+.page-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 4px; }
+.page-title { font-family: var(--font-head); font-size: 20px; color: var(--cyan); letter-spacing: 1px; }
+.page-sub { font-size: 13px; color: var(--muted); }
+
+/* ── CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.card-title { font-size: 12px; font-family: var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+/* ── TOTAL CARD ── */
+.total-card {
+  background: linear-gradient(135deg, #0a1f35 0%, #0d2940 100%);
+  border: 1px solid rgba(0,229,255,0.25);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.total-card::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 70%);
+}
+.total-label { font-size: 12px; font-family: var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.total-value { font-family: var(--font-head); font-size: 38px; color: var(--cyan); margin: 6px 0; letter-spacing: -1px; }
+.total-sub { font-size: 13px; color: var(--muted); }
+
+/* ── GRÁFICO DE BARRAS ── */
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; flex-direction: column; gap: 4px; }
+.bar-info { display: flex; justify-content: space-between; font-size: 13px; }
+.bar-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.bar-val  { color: var(--cyan); font-family: var(--font-head); font-size: 12px; }
+.bar-track { height: 6px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--cyan2), var(--cyan)); transition: width 1s cubic-bezier(.4,0,.2,1); }
+
+/* ── HISTÓRICO MESES ── */
+.mes-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.mes-row:last-child { border-bottom: none; }
+.mes-nome { font-size: 15px; font-weight: 500; }
+.mes-notas { font-size: 12px; color: var(--muted); }
+.mes-val { font-family: var(--font-head); font-size: 16px; color: var(--cyan); }
+
+/* ── INSIGHT CARD ── */
+.insight-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+}
+.insight-card.alerta { border-color: rgba(255,82,82,0.3); background: rgba(255,82,82,0.05); }
+.insight-card.economia { border-color: rgba(0,230,118,0.3); background: rgba(0,230,118,0.05); }
+.insight-card.info    { border-color: rgba(0,229,255,0.2); }
+.insight-icon { font-size: 28px; flex-shrink: 0; }
+.insight-msg  { font-size: 14px; line-height: 1.5; color: var(--text); }
+
+/* ── NOTA ITEM ── */
+.nota-item {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 16px;
+  cursor: pointer; transition: border-color 0.2s;
+}
+.nota-item:active { border-color: var(--cyan); }
+.nota-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.nota-nome { font-size: 15px; font-weight: 600; color: var(--text); }
+.nota-total { font-family: var(--font-head); font-size: 16px; color: var(--cyan); }
+.nota-info { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.nota-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tag {
+  font-size: 11px; padding: 3px 10px; border-radius: 99px;
+  background: var(--bg3); color: var(--muted); border: 1px solid var(--border);
+}
+
+/* ── SCANNER ── */
+#scanner-wrap {
+  width: 100%; aspect-ratio: 1;
+  border-radius: 20px; overflow: hidden;
+  background: #000; position: relative;
+  border: 1px solid var(--border);
+}
+#video { width: 100%; height: 100%; object-fit: cover; display: none; }
+#placeholder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; background: var(--bg2);
+}
+#placeholder .ph-icon { font-size: 64px; opacity: 0.35; }
+#placeholder p { font-size: 15px; color: var(--muted); text-align: center; padding: 0 24px; }
+#frame-overlay {
+  position: absolute; inset: 0; display: none;
+  align-items: center; justify-content: center; pointer-events: none;
+}
+.scan-frame { width: 62%; aspect-ratio: 1; position: relative; }
+.scan-frame::before, .scan-frame::after, .cbr, .cbl {
+  content: ''; position: absolute; width: 28px; height: 28px;
+  border-color: var(--cyan); border-style: solid;
+}
+.scan-frame::before { top:0; left:0; border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
+.scan-frame::after  { top:0; right:0; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
+.cbr { bottom:0; right:0; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
+.cbl { bottom:0; left:0; border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
+.scan-line {
+  position: absolute; left: 6px; right: 6px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scan 2s ease-in-out infinite; top: 0;
+  box-shadow: 0 0 8px var(--cyan);
+}
+@keyframes scan { 0%{top:6px;opacity:1} 90%{top:calc(100% - 6px);opacity:1} 100%{top:calc(100% - 6px);opacity:0} }
+
+/* ── STATUS BOX ── */
+#status-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+#status-box.ok     { border-color: rgba(0,230,118,0.4); background: rgba(0,230,118,0.06); }
+#status-box.error  { border-color: rgba(255,82,82,0.4);  background: rgba(255,82,82,0.06); }
+#status-box.warn   { border-color: rgba(255,171,0,0.4);  background: rgba(255,171,0,0.06); }
+#status-box.load   { border-color: rgba(0,229,255,0.3);  background: rgba(0,229,255,0.04); }
+#s-icon { font-size: 32px; flex-shrink: 0; }
+#s-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+#s-msg   { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+/* ── BOTÃO PRINCIPAL ── */
+#btn-main {
+  width: 100%; padding: 18px; border-radius: var(--radius); border: none;
+  font-size: 18px; font-weight: 700; font-family: var(--font-head);
+  cursor: pointer; background: var(--cyan); color: var(--bg);
+  letter-spacing: 1px; transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 4px 20px rgba(0,229,255,0.25);
+}
+#btn-main:active { opacity: 0.85; transform: scale(0.98); }
+#btn-main.stop {
+  background: var(--bg3); color: var(--muted);
+  border: 1px solid var(--border); box-shadow: none;
+}
+
+/* ── HISTORICO SCANNER ── */
+#scan-hist { display: flex; flex-direction: column; gap: 8px; }
+.hist-item {
+  font-size: 13px; color: var(--muted);
+  padding: 10px 14px; background: var(--bg2);
+  border-radius: 10px; border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.hdot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.hdot.dup { background: var(--amber); }
+.hist-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── SPINNER ── */
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid rgba(0,229,255,0.3); border-top-color: var(--cyan);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  vertical-align: middle; margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── LOADING STATE ── */
+.loading-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 14px; padding: 40px 20px;
+  color: var(--muted); font-size: 14px;
+}
+.big-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(0,229,255,0.2); border-top-color: var(--cyan);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+
+/* ── DETALHE NOTA ── */
+#modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 200; display: none; align-items: flex-end;
+}
+#modal-overlay.open { display: flex; }
+#modal {
+  background: var(--bg2); border-radius: 24px 24px 0 0;
+  width: 100%; max-height: 80vh; overflow-y: auto;
+  padding: 20px 16px 40px;
+  border-top: 1px solid var(--border);
+}
+.modal-handle { width: 40px; height: 4px; background: var(--bg3); border-radius: 99px; margin: 0 auto 20px; }
+.item-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border); gap: 10px;
+}
+.item-row:last-child { border-bottom: none; }
+.item-desc { font-size: 14px; flex: 1; }
+.item-cat  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.item-price { font-family: var(--font-head); font-size: 14px; color: var(--cyan); white-space: nowrap; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 99px; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
+.empty .ei { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── TELA: SCANNER ── -->
+  <div id="tela-scanner" class="tela ativa">
+    <div class="page-header">
+      <div>
+        <div class="page-title">NFC-e SCAN</div>
+        <div class="page-sub">Escaneie o QR Code da nota</div>
+      </div>
+      <div id="counter" style="font-family:var(--font-head);font-size:13px;color:var(--muted);background:var(--bg2);padding:6px 14px;border-radius:99px;border:1px solid var(--border)">0 notas</div>
+    </div>
+
+    <div id="scanner-wrap">
+      <div id="placeholder">
+        <div class="ph-icon">📷</div>
+        <p>Toque em Iniciar para abrir a câmera</p>
+      </div>
+      <video id="video" autoplay playsinline muted></video>
+      <div id="frame-overlay">
+        <div class="scan-frame">
+          <div class="cbr"></div><div class="cbl"></div>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="status-box">
+      <div id="s-icon">📋</div>
+      <div>
+        <div id="s-title">Pronto</div>
+        <div id="s-msg">Aponte para o QR Code da nota fiscal</div>
+      </div>
+    </div>
+
+    <button id="btn-main" onclick="toggle()">▶ INICIAR SCANNER</button>
+    <div id="scan-hist"></div>
+  </div>
+
+  <!-- ── TELA: DASHBOARD ── -->
+  <div id="tela-dash" class="tela">
+    <div class="page-header">
+      <div>
+        <div class="page-title">DASHBOARD</div>
+        <div class="page-sub" id="dash-periodo">Carregando...</div>
+      </div>
+    </div>
+
+    <div class="total-card">
+      <div class="total-label">Total do mês</div>
+      <div class="total-value" id="dash-total">R$ —</div>
+      <div class="total-sub" id="dash-notas">— notas escaneadas</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gastos por categoria</div>
+      <div class="bar-chart" id="dash-cats">
+        <div class="loading-state"><div class="big-spinner"></div>Carregando...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Histórico mensal</div>
+      <div id="dash-hist">
+        <div class="loading-state"><div class="big-spinner"></div>Carregando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TELA: INSIGHTS ── -->
+  <div id="tela-insights" class="tela">
+    <div class="page-header">
+      <div>
+        <div class="page-title">INSIGHTS</div>
+        <div class="page-sub">Análise do seu consumo</div>
+      </div>
+    </div>
+    <div id="insights-list">
+      <div class="loading-state"><div class="big-spinner"></div>Analisando seus dados...</div>
+    </div>
+  </div>
+
+  <!-- ── TELA: HISTÓRICO ── -->
+  <div id="tela-hist" class="tela">
+    <div class="page-header">
+      <div>
+        <div class="page-title">NOTAS</div>
+        <div class="page-sub">Histórico de compras</div>
+      </div>
+    </div>
+    <div id="hist-list">
+      <div class="loading-state"><div class="big-spinner"></div>Carregando notas...</div>
+    </div>
+  </div>
+
+  <!-- ── NAV ── -->
+  <nav>
+    <button class="nav-btn ativo" onclick="irPara('scanner',this)">
+      <span class="ni">📷</span>Scanner
+    </button>
+    <button class="nav-btn" onclick="irPara('dash',this)">
+      <span class="ni">📊</span>Dashboard
+    </button>
+    <button class="nav-btn" onclick="irPara('insights',this)">
+      <span class="ni">💡</span>Insights
+    </button>
+    <button class="nav-btn" onclick="irPara('hist',this)">
+      <span class="ni">🧾</span>Notas
+    </button>
+  </nav>
+
+</div>
+
+<!-- MODAL DETALHE -->
+<div id="modal-overlay" onclick="fecharModal(event)">
+  <div id="modal">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// ⚠️ SUBSTITUA PELA SUA URL DO APPS SCRIPT APÓS PUBLICAR
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxTeyZZIdIml2DRufK8jCDe1ZP8g4bsgVuiV4FhuTQ0jw-x-qF_25GcPttYYjxAlzWt_Q/exec';
+
+// ── NAVEGAÇÃO ────────────────────────────────────────────────
+let telaAtiva = 'scanner';
+const carregado = {};
+
+function irPara(id, btn) {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('tela-' + id).classList.add('ativa');
+  btn.classList.add('ativo');
+  telaAtiva = id;
+  if (!carregado[id]) {
+    carregado[id] = true;
+    if (id === 'dash')     carregarDash();
+    if (id === 'insights') carregarInsights();
+    if (id === 'hist')     carregarHist();
+  }
+}
+
+// ── SCANNER ─────────────────────────────────────────────────
+let stream = null, scanning = false, raf = null, count = 0;
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const video = document.getElementById('video');
+
+function setStatus(type, icon, title, msg) {
+  const box = document.getElementById('status-box');
+  box.className = type;
+  document.getElementById('s-icon').innerHTML = icon;
+  document.getElementById('s-title').textContent = title;
+  document.getElementById('s-msg').innerHTML = msg;
+}
+
+function toggle() {
+  if (scanning || stream) stopScanner();
+  else startScanner();
+}
+
+async function startScanner() {
+  setStatus('load','⏳','Abrindo câmera...','Aguarde...');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      video.play();
+      video.style.display = 'block';
+      document.getElementById('placeholder').style.display = 'none';
+      document.getElementById('frame-overlay').style.display = 'flex';
+    };
+    const btn = document.getElementById('btn-main');
+    btn.textContent = '⏹ PARAR SCANNER';
+    btn.classList.add('stop');
+    scanning = true;
+    setStatus('load','🔍','Escaneando...','Aponte para o QR Code da nota');
+    loop();
+  } catch(e) {
+    setStatus('error','❌','Erro na câmera','Verifique as permissões do navegador.');
+  }
+}
+
+function stopScanner() {
+  scanning = false;
+  if (raf) cancelAnimationFrame(raf);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.style.display = 'none';
+  document.getElementById('placeholder').style.display = 'flex';
+  document.getElementById('frame-overlay').style.display = 'none';
+  const btn = document.getElementById('btn-main');
+  btn.textContent = '▶ INICIAR SCANNER';
+  btn.classList.remove('stop');
+  setStatus('','📋','Pronto','Aponte para o QR Code da nota fiscal');
+}
+
+function loop() {
+  if (!scanning) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    try {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data && code.data.startsWith('http')) {
+        scanning = false;
+        handleQR(code.data);
+        return;
+      }
+    } catch(e) {}
+  }
+  raf = requestAnimationFrame(loop);
+}
+
+async function handleQR(url) {
+  stopScanner();
+  setStatus('load','<span class="spinner"></span>','QR lido!','Salvando na planilha...');
+  try {
+    const resp = await fetch(SCRIPT_URL + '?acao=salvar&url=' + encodeURIComponent(url));
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      count++;
+      document.getElementById('counter').textContent = count + (count === 1 ? ' nota' : ' notas');
+      setStatus('ok','✅','Nota salva!','Dados organizados na planilha!');
+      addScanHist(url, false);
+      // Limpa cache para recarregar dados
+      carregado['dash'] = false;
+      carregado['insights'] = false;
+      carregado['hist'] = false;
+    } else if (data.status === 'duplicado') {
+      setStatus('warn','⚠️','Nota duplicada','Esta nota já foi registrada.');
+      addScanHist(url, true);
+    } else {
+      setStatus('error','❌','Erro','Tente escanear novamente.');
+    }
+  } catch(e) {
+    setStatus('error','❌','Erro de conexão','Verifique sua internet.');
+  }
+}
+
+function addScanHist(url, dup) {
+  const hist = document.getElementById('scan-hist');
+  const el = document.createElement('div');
+  el.className = 'hist-item';
+  const short = url.length > 45 ? url.substring(0, 45) + '...' : url;
+  el.innerHTML = '<div class="hdot' + (dup ? ' dup' : '') + '"></div><span>' + short + '</span>';
+  hist.prepend(el);
+  while (hist.children.length > 3) hist.removeChild(hist.lastChild);
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+async function carregarDash() {
+  try {
+    const resp = await fetch(SCRIPT_URL + '?acao=relatorio');
+    const data = await resp.json();
+    if (data.status !== 'ok') return;
+
+    // Header
+    const [ano, mes] = data.mesAtual.split('-');
+    document.getElementById('dash-periodo').textContent = MESES_PT[parseInt(mes)-1] + ' ' + ano;
+    document.getElementById('dash-total').textContent = 'R$ ' + (data.totalMesAtual || 0).toFixed(2).replace('.', ',');
+    document.getElementById('dash-notas').textContent = (data.notasMesAtual || 0) + ' notas escaneadas';
+
+    // Categorias
+    const cats = Object.entries(data.categorias || {}).sort((a,b) => b[1]-a[1]);
+    const maxVal = cats[0] ? cats[0][1] : 1;
+    const catsEl = document.getElementById('dash-cats');
+
+    if (cats.length === 0) {
+      catsEl.innerHTML = '<div class="empty"><div class="ei">📦</div>Nenhum item este mês</div>';
+    } else {
+      catsEl.innerHTML = cats.map(([cat, val]) => `
+        <div class="bar-row">
+          <div class="bar-info">
+            <span class="bar-name">${cat}</span>
+            <span class="bar-val">R$ ${val.toFixed(2).replace('.',',')}</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${(val/maxVal*100).toFixed(1)}%"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Histórico de meses
+    const histMeses = Object.entries(data.historico || {})
+      .sort((a,b) => b[0].localeCompare(a[0])).slice(0, 6);
+    const histEl = document.getElementById('dash-hist');
+
+    if (histMeses.length === 0) {
+      histEl.innerHTML = '<div class="empty"><div class="ei">📅</div>Nenhum histórico ainda</div>';
+    } else {
+      histEl.innerHTML = histMeses.map(([chave, info]) => {
+        const [a, m] = chave.split('-');
+        return `
+          <div class="mes-row">
+            <div>
+              <div class="mes-nome">${MESES_PT[parseInt(m)-1]} ${a}</div>
+              <div class="mes-notas">${info.notas} nota${info.notas !== 1 ? 's' : ''}</div>
+            </div>
+            <div class="mes-val">R$ ${info.total.toFixed(2).replace('.',',')}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+  } catch(e) {
+    document.getElementById('dash-cats').innerHTML = '<div class="empty">Erro ao carregar. Verifique a conexão.</div>';
+  }
+}
+
+// ── INSIGHTS ─────────────────────────────────────────────────
+async function carregarInsights() {
+  try {
+    const resp = await fetch(SCRIPT_URL + '?acao=insights');
+    const data = await resp.json();
+    const el = document.getElementById('insights-list');
+
+    if (data.status !== 'ok' || !data.insights.length) {
+      el.innerHTML = '<div class="empty"><div class="ei">💡</div>Escaneie mais notas para ver insights!</div>';
+      return;
+    }
+
+    el.innerHTML = data.insights.map(ins => `
+      <div class="insight-card ${ins.tipo}">
+        <div class="insight-icon">${ins.icone}</div>
+        <div class="insight-msg">${ins.mensagem}</div>
+      </div>
+    `).join('');
+
+  } catch(e) {
+    document.getElementById('insights-list').innerHTML = '<div class="empty">Erro ao carregar insights.</div>';
+  }
+}
+
+// ── HISTÓRICO DE NOTAS ───────────────────────────────────────
+async function carregarHist() {
+  try {
+    const resp = await fetch(SCRIPT_URL + '?acao=historico');
+    const data = await resp.json();
+    const el = document.getElementById('hist-list');
+
+    if (data.status !== 'ok' || !data.notas.length) {
+      el.innerHTML = '<div class="empty"><div class="ei">🧾</div>Nenhuma nota ainda.<br>Escaneie sua primeira nota!</div>';
+      return;
+    }
+
+    el.innerHTML = data.notas.map(nota => {
+      const data_str = nota.data ? new Date(nota.data).toLocaleDateString('pt-BR') : '—';
+      const cats = [...new Set((nota.itens || []).map(i => i.categoria))].slice(0,3);
+      const totalFmt = parseFloat(nota.total || 0).toFixed(2).replace('.',',');
+      return `
+        <div class="nota-item" onclick="abrirNota(${JSON.stringify(nota).replace(/"/g,'&quot;')})">
+          <div class="nota-top">
+            <div class="nota-nome">${nota.emitente || 'Estabelecimento'}</div>
+            <div class="nota-total">R$ ${totalFmt}</div>
+          </div>
+          <div class="nota-info">${data_str} · ${(nota.itens||[]).length} itens</div>
+          ${cats.length ? `<div class="nota-tags">${cats.map(c=>`<span class="tag">${c}</span>`).join('')}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+  } catch(e) {
+    document.getElementById('hist-list').innerHTML = '<div class="empty">Erro ao carregar histórico.</div>';
+  }
+}
+
+// ── MODAL DETALHE NOTA ───────────────────────────────────────
+function abrirNota(nota) {
+  const totalFmt = parseFloat(nota.total || 0).toFixed(2).replace('.',',');
+  const data_str = nota.data ? new Date(nota.data).toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const itens = nota.itens || [];
+
+  document.getElementById('modal-content').innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-family:var(--font-head);font-size:18px;color:var(--cyan)">${nota.emitente || 'Estabelecimento'}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">${data_str} · CNPJ ${nota.cnpj || '—'}</div>
+    </div>
+    <div style="font-family:var(--font-head);font-size:28px;color:var(--text);margin-bottom:20px">R$ ${totalFmt}</div>
+    <div style="font-size:12px;font-family:var(--font-head);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">${itens.length} itens</div>
+    ${itens.length === 0
+      ? '<div class="empty">Detalhes dos itens não disponíveis</div>'
+      : itens.map(it => `
+          <div class="item-row">
+            <div style="flex:1">
+              <div class="item-desc">${it.descricao}</div>
+              <div class="item-cat">${it.categoria || ''} · ${it.qtd}x R$ ${parseFloat(it.valorUnit||0).toFixed(2).replace('.',',')}</div>
+            </div>
+            <div class="item-price">R$ ${parseFloat(it.valorTotal||0).toFixed(2).replace('.',',')}</div>
+          </div>
+        `).join('')
+    }
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function fecharModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+</script>
+</body>
+</html>
