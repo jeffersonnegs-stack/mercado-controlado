@@ -2,64 +2,57 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<h2>📈 Seus Gastos</h2>
-
-<section>
-  <h3>Total do mês</h3>
-  <div id="totalMes">Carregando...</div>
-</section>
-
-<section>
-  <h3>Distribuição de gastos</h3>
-
-  <div>
-    <strong>Essencial</strong>
-    <div id="valorEssencial">R$ 0,00</div>
-    <small id="pctEssencial">0% do total</small>
-  </div>
-
-  <div>
-    <strong>Complementar</strong>
-    <div id="valorComplementar">R$ 0,00</div>
-    <small id="pctComplementar">0% do total</small>
-  </div>
-
-  <div>
-    <strong>Supérfluo</strong>
-    <div id="valorSuperfluo">R$ 0,00</div>
-    <small id="pctSuperfluo">0% do total</small>
-  </div>
-</section>
-
-<section>
-  <h3>Score</h3>
-  <div><span id="score">0</span> de 100 pontos</div>
-</section>
-
-<section>
-  <h3>Previsão do mês</h3>
-  <div id="previsaoMes">R$ 0,00</div>
-</section>
-
-<button onclick="voltar()">Voltar</button>
+<div class="container">
+  <h2>📈 Seus Gastos</h2>
+  <div id="score"></div>
+  <div id="total"></div>
+  <div id="essencial"></div>
+  <div id="complementar"></div>
+  <div id="superfluo"></div>
+  <div id="insights"></div>
+  <button onclick="window.location.href='index.html'">← Voltar</button>
+</div>
 
 <script src="script.js"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    carregarDashboard();
-  });
+  const API = "https://script.google.com/macros/s/SEU_ID_AQUI/exec";
 
-  function voltar() {
-    window.history.back();
+  async function carregarDashboard() {
+    document.getElementById("total").textContent = "Carregando...";
+    try {
+      const [relRes, insRes] = await Promise.all([
+        fetch(API + "?acao=relatorio"),
+        fetch(API + "?acao=insights")
+      ]);
+      const rel = await relRes.json();
+      const ins = await insRes.json();
+
+      document.getElementById("score").textContent =
+        "🎯 Score: " + rel.score + "/100";
+      document.getElementById("total").textContent =
+        "💰 Total do mês: R$ " + (rel.totalMesAtual || 0).toFixed(2);
+      document.getElementById("essencial").textContent =
+        "🟢 Essencial: R$ " + (rel.grupos?.Essencial || 0).toFixed(2);
+      document.getElementById("complementar").textContent =
+        "🟡 Complementar: R$ " + (rel.grupos?.Complementar || 0).toFixed(2);
+      document.getElementById("superfluo").textContent =
+        "🔴 Supérfluo: R$ " + (rel.grupos?.Superfluo || 0).toFixed(2);
+
+      const insDiv = document.getElementById("insights");
+      insDiv.innerHTML = (ins.insights || [])
+        .map(i => `<p>${i.icone} ${i.mensagem}</p>`)
+        .join("");
+    } catch (e) {
+      document.getElementById("total").textContent = "Erro ao carregar: " + e.message;
+    }
   }
+
+  carregarDashboard();
 </script>
-
-
-
 </body>
 </html>
