@@ -565,3 +565,16 @@ function criarEstrutura() {
   });
   SpreadsheetApp.getUi().alert('Estrutura criada!');
 }
+// sw.js — colar na raiz do projeto GitHub Pages
+const CACHE = "nfce-v1";
+const ASSETS = ["/", "/index.html", "/painel.html", "/style.css", "/script.js", "/manifest.json"];
+
+self.addEventListener("install", e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+});
+
+self.addEventListener("fetch", e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});
