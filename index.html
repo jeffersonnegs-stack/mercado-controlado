@@ -245,7 +245,7 @@ nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-w
 </div>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-var API = 'https://script.google.com/macros/s/AKfycbxTeyZZIdIml2DRufK8jCDe1ZP8g4bsgVuiV4FhuTQ0jw-x-qF_25GcPttYYjxAlzWt_Q/exec';
+var API = 'https://script.google.com/macros/s/AKfycbywxAftJ711lOTeagCSyIpzVKK0394m4F4VmzmXEzmvXHgdpKj55ZAj7_Ucz4jrIpc-kQ/exec';
 var GC = { Essencial: '#22c55e', Complementar: '#f59e0b', Superfluo: '#ef4444' };
 var MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 var carregado = {};
@@ -550,9 +550,11 @@ function fecharModal(e) {
   if (e.target === document.getElementById('modover'))
     document.getElementById('modover').classList.remove('open');
 }
-  processarNota(qrCodeMessage).then(() => {
-  window.location.href = "dashboard.html";
-});
+  function fecharModal(e) {
+  if (e.target === document.getElementById('modover'))
+    document.getElementById('modover').classList.remove('open');
+}
 </script>
 </body>
 </html>
+
