@@ -23,30 +23,52 @@ function salvarDados(dados) {
 }
 
 async function carregarDashboard() {
-  const res = await fetch(API + "?acao=relatorio");
-  const dados = await res.json();
+  try {
+    const res = await fetch(API + "?acao=relatorio");
+    const dados = await res.json();
 
-  const total = Number(dados.totalMesAtual || 0);
-  const grupos = dados.grupos || {};
+    console.log("RELATORIO:", dados);
 
-  const essencial = Number(grupos.Essencial || 0);
-  const complementar = Number(grupos.Complementar || 0);
-  const superfluo = Number(grupos.Superfluo || 0);
+    if (dados.status !== "ok") {
+      console.error("Erro no relatório:", dados.mensagem || dados);
+      return;
+    }
 
-  document.getElementById("totalMes").textContent = formatarMoeda(total);
-  document.getElementById("valorEssencial").textContent = formatarMoeda(essencial);
-  document.getElementById("valorComplementar").textContent = formatarMoeda(complementar);
-  document.getElementById("valorSuperfluo").textContent = formatarMoeda(superfluo);
+    const total = Number(dados.totalMesAtual || 0);
+    const grupos = dados.grupos || {};
 
-  document.getElementById("pctEssencial").textContent = calcularPercentual(essencial, total) + "% do total";
-  document.getElementById("pctComplementar").textContent = calcularPercentual(complementar, total) + "% do total";
-  document.getElementById("pctSuperfluo").textContent = calcularPercentual(superfluo, total) + "% do total";
+    const essencial = Number(grupos.Essencial || 0);
+    const complementar = Number(grupos.Complementar || 0);
+    const superfluo = Number(grupos.Superfluo || 0);
 
-  document.getElementById("score").textContent = dados.score || 0;
+    atualizarTexto("totalMes", formatarMoeda(total));
 
-  const dia = new Date().getDate();
-  const previsao = total > 0 ? (total / dia) * 30 : 0;
-  document.getElementById("previsaoMes").textContent = formatarMoeda(previsao);
+    atualizarTexto("valorEssencial", formatarMoeda(essencial));
+    atualizarTexto("valorComplementar", formatarMoeda(complementar));
+    atualizarTexto("valorSuperfluo", formatarMoeda(superfluo));
+
+    atualizarTexto("pctEssencial", calcularPercentual(essencial, total) + "% do total");
+    atualizarTexto("pctComplementar", calcularPercentual(complementar, total) + "% do total");
+    atualizarTexto("pctSuperfluo", calcularPercentual(superfluo, total) + "% do total");
+
+    atualizarTexto("score", dados.score || 0);
+
+    const dia = new Date().getDate();
+    const previsao = total > 0 ? (total / dia) * 30 : 0;
+    atualizarTexto("previsaoMes", formatarMoeda(previsao));
+
+  } catch (erro) {
+    console.error("Erro ao carregar dashboard:", erro);
+  }
+}
+
+function atualizarTexto(id, valor) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.textContent = valor;
+  } else {
+    console.warn("Elemento não encontrado:", id);
+  }
 }
 
 function calcularPercentual(valor, total) {
@@ -60,5 +82,4 @@ function formatarMoeda(valor) {
     currency: "BRL"
   });
 }
-
 
