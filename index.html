@@ -483,7 +483,28 @@ function abrirDetalhe(mes, nome, total) {
         html += '<div class="gsec">' +
           '<div class="gsectit"><div class="gsdot" style="background:' + cor + '"></div><span>' + grupo + '</span>' +
           '<div class="gstot" style="color:' + cor + '">R$ ' + info.total.toFixed(2).replace('.', ',') + '</div></div>' +
-          cats.map(function(c){ return '<div class="crow"><span class="cname">' + c[0] + '</span><span>R$ ' + c[1].toFixed(2).replace('.', ',') + '</span></div>'; }).join('') +
+cats.map(function(c, idx) {
+  var catNome = c[0];
+  var catTotal = c[1];
+  var lista = (info.itensPorCategoria && info.itensPorCategoria[catNome]) || [];
+  var boxId = 'cat-' + grupo + '-' + idx;
+
+  var itensHtml = lista.map(function(item) {
+    return '<div class="irow" style="padding:9px 0 9px 12px">' +
+      '<div style="flex:1">' +
+        '<div class="idesc">' + item.descricao + '</div>' +
+        '<div class="icat">' + (item.quantidade || 1) + 'x R$ ' + Number(item.valorUnit || 0).toFixed(2).replace('.', ',') + '</div>' +
+      '</div>' +
+      '<div class="iprice">R$ ' + Number(item.valorTotal || 0).toFixed(2).replace('.', ',') + '</div>' +
+    '</div>';
+  }).join('');
+
+  return '<div class="crow" onclick="toggleCategoria(\'' + boxId + '\')" style="cursor:pointer">' +
+    '<span class="cname">' + catNome + '</span>' +
+    '<span>R$ ' + catTotal.toFixed(2).replace('.', ',') + ' ›</span>' +
+  '</div>' +
+  '<div id="' + boxId + '" style="display:none;padding-bottom:8px">' + itensHtml + '</div>';
+}).join('')
           '</div>';
       });
       document.getElementById('modcont').innerHTML =
@@ -492,6 +513,13 @@ function abrirDetalhe(mes, nome, total) {
         (html || '<div class="empty">Nenhum dado disponivel</div>');
     })
     .catch(function(){});
+}
+
+  function toggleCategoria(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function carregarInsights() {
