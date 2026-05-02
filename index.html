@@ -369,69 +369,99 @@ function addHist(url, dup) {
 }
 
 function carregarDash() {
-  fetch(API + '?acao=relatorio')
+  fetch(API + '?acao=relatorio&t=' + Date.now(), {
+    cache: 'no-store'
+  })
     .then(function(r){ return r.json(); })
     .then(function(data) {
-      if (data.status !== 'ok') return;
+      console.log('RELATORIO RECEBIDO NO APP:', data);
+
+      if (data.status !== 'ok') {
+        console.log('Erro no relatorio:', data);
+        return;
+      }
+
       var parts = data.mesAtual.split('-');
-      document.getElementById('dash-periodo').textContent = MESES[parseInt(parts[1])-1] + ' ' + parts[0];
-      var total = data.totalMesAtual || 0;
+      document.getElementById('dash-periodo').textContent = MESES[parseInt(parts[1]) - 1] + ' ' + parts[0];
+
+      var total = Number(data.totalMesAtual || 0);
       var tf = total.toFixed(2).split('.');
       document.getElementById('dash-total').textContent = parseInt(tf[0]).toLocaleString('pt-BR') + ',' + tf[1];
       document.getElementById('dash-notas').textContent = (data.notasMesAtual || 0) + ' notas escaneadas';
 
-      if (data.score !== undefined) {
-        document.getElementById('dash-score').textContent = data.score;
-        var scoreEl = document.getElementById('dash-score');
-        if (data.score >= 80) scoreEl.style.color = 'var(--green)';
-        else if (data.score >= 60) scoreEl.style.color = 'var(--amber)';
-        else scoreEl.style.color = 'var(--red)';
-      }
+      document.getElementById('dash-score').textContent = data.score || 0;
 
       var hoje = new Date().getDate();
-      if (data.totalMesAtual > 0 && hoje > 0) {
-        var previsao = (data.totalMesAtual / hoje) * 30;
-        document.getElementById('dash-previsao').textContent = 'R$ ' + previsao.toFixed(2).replace('.', ',');
-      }
+      var previsao = total > 0 && hoje > 0 ? (total / hoje) * 30 : 0;
+      document.getElementById('dash-previsao').textContent = 'R$ ' + previsao.toFixed(2).replace('.', ',');
 
-      var grupos = data.grupos || { Essencial: 0, Complementar: 0, Superfluo: 0 };
-      var tg = Object.values(grupos).reduce(function(a,b){ return a+b; }, 0) || 1;
+      var grupos = data.grupos || {};
+      var gruposCorrigidos = {
+        Essencial: Number(grupos.Essencial || grupos.essencial || grupos.essenciais || 0),
+        Complementar: Number(grupos.Complementar || grupos.complementar || grupos.complementares || 0),
+        Superfluo: Number(grupos.Superfluo || grupos.Supérfluo || grupos.superfluo || grupos.superfluos || 0)
+      };
+
+      var totalGrupos = gruposCorrigidos.Essencial + gruposCorrigidos.Complementar + gruposCorrigidos.Superfluo;
+      var basePercentual = totalGrupos > 0 ? totalGrupos : 1;
+
       var html = '';
-      Object.keys(grupos).forEach(function(nome) {
-        var val = grupos[nome];
+
+      Object.keys(gruposCorrigidos).forEach(function(nome) {
+        var val = gruposCorrigidos[nome];
         var cor = GC[nome] || '#64748b';
-        var pct = Math.round(val / tg * 100);
+        var pct = Math.round((val / basePercentual) * 100);
+
         html += '<div class="gcard">' +
-          '<div style="display:flex;align-items:center;gap:6px"><div class="gdot" style="background:' + cor + '"></div><div class="gnome">' + nome + '</div></div>' +
+          '<div style="display:flex;align-items:center;gap:6px">' +
+            '<div class="gdot" style="background:' + cor + '"></div>' +
+            '<div class="gnome">' + nome + '</div>' +
+          '</div>' +
           '<div class="gval" style="color:' + cor + '">R$ ' + val.toFixed(2).replace('.', ',') + '</div>' +
           '<div class="gpct">' + pct + '% do total</div>' +
           '<div class="gbar"><div class="gbarf" style="width:' + pct + '%;background:' + cor + '"></div></div>' +
-          '</div>';
+        '</div>';
       });
-      document.getElementById('dash-grupos').innerHTML = html || '<div class="ldg" style="grid-column:1/-1">Sem dados</div>';
 
-      var hist = Object.entries(data.historico || {}).sort(function(a,b){ return b[0].localeCompare(a[0]); }).slice(0, 6);
+      document.getElementById('dash-grupos').innerHTML = html;
+
+      var hist = Object.entries(data.historico || {})
+        .sort(function(a,b){ return b[0].localeCompare(a[0]); })
+        .slice(0, 6);
+
       if (!hist.length) {
         document.getElementById('dash-hist').innerHTML = '<div class="empty"><div class="eico">&#x1F4C5;</div>Nenhum historico ainda</div>';
       } else {
         var hhtml = '';
+
         hist.forEach(function(entry) {
-          var chave = entry[0], info = entry[1];
+          var chave = entry[0];
+          var info = entry[1];
           var p = chave.split('-');
-          var nm = MESES[parseInt(p[1])-1] + ' ' + p[0];
-          hhtml += '<div class="mrow" onclick="abrirDetalhe(\'' + chave + '\',\'' + nm + '\',' + info.total.toFixed(2) + ')">' +
+          var nm = MESES[parseInt(p[1]) - 1] + ' ' + p[0];
+
+          hhtml += '<div class="mrow" onclick="abrirDetalhe(\'' + chave + '\',\'' + nm + '\',' + Number(info.total || 0).toFixed(2) + ')">' +
             '<div class="mdot"></div>' +
-            '<div class="minfo"><div class="mnome">' + nm + '</div><div class="msub">' + info.notas + ' nota' + (info.notas !== 1 ? 's' : '') + '</div></div>' +
-            '<div class="mright"><div class="mval">R$ ' + info.total.toFixed(2).replace('.', ',') + '</div><div class="marrow">ver detalhes &#x203A;</div></div>' +
-            '</div>';
+            '<div class="minfo">' +
+              '<div class="mnome">' + nm + '</div>' +
+              '<div class="msub">' + info.notas + ' nota' + (info.notas !== 1 ? 's' : '') + '</div>' +
+            '</div>' +
+            '<div class="mright">' +
+              '<div class="mval">R$ ' + Number(info.total || 0).toFixed(2).replace('.', ',') + '</div>' +
+              '<div class="marrow">ver detalhes &#x203A;</div>' +
+            '</div>' +
+          '</div>';
         });
+
         document.getElementById('dash-hist').innerHTML = hhtml;
       }
     })
-    .catch(function() {
+    .catch(function(erro) {
+      console.log('Erro ao carregar dashboard:', erro);
       document.getElementById('dash-grupos').innerHTML = '<div class="empty" style="grid-column:1/-1">Erro ao carregar.</div>';
     });
 }
+
 
 function abrirDetalhe(mes, nome, total) {
   document.getElementById('modcont').innerHTML =
