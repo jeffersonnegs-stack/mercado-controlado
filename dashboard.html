@@ -9,9 +9,36 @@
 
 <h2>📈 Seus Gastos</h2>
 
-<div id="total"></div>
-<div id="essencial"></div>
-<div id="superfluo"></div>
+<h3>Total do mês</h3>
+<div id="totalMes">Carregando...</div>
+
+<h3>Distribuição de gastos</h3>
+
+<div>
+  <strong>Essencial</strong>
+  <div id="valorEssencial">R$ 0,00</div>
+  <small id="pctEssencial">0% do total</small>
+</div>
+
+<div>
+  <strong>Complementar</strong>
+  <div id="valorComplementar">R$ 0,00</div>
+  <small id="pctComplementar">0% do total</small>
+</div>
+
+<div>
+  <strong>Supérfluo</strong>
+  <div id="valorSuperfluo">R$ 0,00</div>
+  <small id="pctSuperfluo">0% do total</small>
+</div>
+
+<h3>Score</h3>
+<div>
+  <span id="score">0</span> de 100 pontos
+</div>
+
+<h3>Previsão do mês</h3>
+<div id="previsaoMes">R$ 0,00</div>
 
 <button onclick="voltar()">Voltar</button>
 
@@ -19,25 +46,9 @@
 <script>
   carregarDashboard();
 
-  function carregarDashboard() {
-  const historico = JSON.parse(localStorage.getItem("notas")) || [];
-
-  let totais = {
-    essenciais: 0,
-    complementares: 0,
-    superfluos: 0
-  };
-
-  historico.forEach(nota => {
-    totais.essenciais += nota.essenciais || 0;
-    totais.complementares += nota.complementares || 0;
-    totais.superfluos += nota.superfluos || 0;
-  });
-
-  console.log(totais);
-}
-
-carregarDashboard();
+  function voltar() {
+    window.history.back();
+  }
 </script>
 
 </body>
