@@ -2,7 +2,7 @@
 // NOTAFÁCIL — sw.js (Service Worker)
 // ════════════════════════════════════════════
 
-const CACHE_NAME = 'notafacil-v2';
+const CACHE_NAME = 'notafacil-v3';
 
 const ASSETS = [
   './',
@@ -14,35 +14,25 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
 
-// Instala e faz cache dos arquivos principais
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => {})
   );
   self.skipWaiting();
 });
 
-// Ativa e remove caches antigos
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      )
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
-// Estratégia: Cache First para assets, Network First para API
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // API do Google Apps Script — sempre usa rede
   if (url.hostname.includes('script.google.com')) {
     event.respondWith(
       fetch(event.request).catch(() =>
@@ -54,19 +44,17 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Assets estáticos — Cache First
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        if (response.ok) {
+        if (response && response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
       });
     }).catch(() => {
-      // Fallback para o index.html em caso de falha total
       if (event.request.destination === 'document') {
         return caches.match('./index.html');
       }
