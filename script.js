@@ -261,63 +261,54 @@ function verDetalhe(idx) {
 async function toggleCam() {
   if (camStream) { stopCam(); return; }
 
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    setStatus('❌ Acesse pelo Chrome em HTTPS para usar a câmera.');
-    return;
-  }
+  setStatus('Carregando...');
 
   try {
-    setStatus('Abrindo câmera...');
-
-    // Carrega jsQR primeiro, antes de abrir a câmera
     if (!jsQrLoaded) {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js');
       jsQrLoaded = true;
     }
-
-    camStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { exact: 'environment' },
-        width:  { ideal: 1920 },
-        height: { ideal: 1080 }
-      }
-    });
-
-    const video = document.getElementById('scan-video');
-    video.srcObject = camStream;
-    video.style.display = 'block';
-    document.getElementById('scan-icon').style.display = 'none';
-    document.getElementById('scan-line').style.display = 'block';
-    document.getElementById('btn-cam').textContent = 'Fechar câmera';
-    setStatus('Aponte para o QR Code da NFC-e...');
-
-    await new Promise(resolve => { video.onloadedmetadata = resolve; });
-    await video.play();
-    scanLoop(video);
-
   } catch(e) {
-    camStream = null;
-    if (e.name === 'OverconstrainedError') {
-      // Tenta sem forçar câmera traseira
-      try {
-        camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const video = document.getElementById('scan-video');
-        video.srcObject = camStream;
-        video.style.display = 'block';
-        document.getElementById('scan-icon').style.display = 'none';
-        document.getElementById('scan-line').style.display = 'block';
-        document.getElementById('btn-cam').textContent = 'Fechar câmera';
-        setStatus('Aponte para o QR Code...');
-        await new Promise(resolve => { video.onloadedmetadata = resolve; });
-        await video.play();
-        scanLoop(video);
-      } catch(e2) {
-        setStatus('❌ Não foi possível acessar a câmera.');
-      }
-    } else {
-      setStatus('❌ Permissão negada. Verifique as configurações do Chrome.');
+    setStatus('❌ Erro ao carregar leitor de QR Code. Verifique sua internet.');
+    return;
+  }
+
+  // Tenta câmera traseira sem "exact" — compatível com mais Androids
+  const tentativas = [
+    { facingMode: 'environment' },
+    { facingMode: 'user' },
+    true
+  ];
+
+  for (const constraint of tentativas) {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: constraint });
+      break;
+    } catch(e) {
+      camStream = null;
     }
   }
+
+  if (!camStream) {
+    setStatus('❌ Câmera bloqueada. Vá em Configurações do Chrome > Permissões do site > Câmera > Permitir.');
+    return;
+  }
+
+  const video = document.getElementById('scan-video');
+  video.srcObject = camStream;
+  video.style.display = 'block';
+  document.getElementById('scan-icon').style.display = 'none';
+  document.getElementById('scan-line').style.display = 'block';
+  document.getElementById('btn-cam').textContent = 'Fechar câmera';
+  setStatus('Aponte para o QR Code da NFC-e...');
+
+  await new Promise(resolve => {
+    video.onloadedmetadata = resolve;
+    setTimeout(resolve, 3000);
+  });
+
+  try { await video.play(); } catch(e) {}
+  scanLoop(video);
 }
 
 function stopCam() {
