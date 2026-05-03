@@ -262,34 +262,61 @@ async function toggleCam() {
   if (camStream) { stopCam(); return; }
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    setStatus('❌ Câmera não disponível. Use HTTPS ou cole a URL manualmente.');
+    setStatus('❌ Acesse pelo Chrome em HTTPS para usar a câmera.');
     return;
   }
 
   try {
-    setStatus('Solicitando acesso à câmera...');
-    camStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
+    setStatus('Abrindo câmera...');
 
-    const video = document.getElementById('scan-video');
-    video.srcObject = camStream;
-    await video.play();
-    video.style.display = 'block';
-    document.getElementById('scan-icon').style.display  = 'none';
-    document.getElementById('scan-line').style.display  = 'block';
-    document.getElementById('btn-cam').textContent = 'Fechar câmera';
-    setStatus('Aponte para o QR Code da NFC-e...');
-
+    // Carrega jsQR primeiro, antes de abrir a câmera
     if (!jsQrLoaded) {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js');
       jsQrLoaded = true;
     }
+
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { exact: 'environment' },
+        width:  { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    });
+
+    const video = document.getElementById('scan-video');
+    video.srcObject = camStream;
+    video.style.display = 'block';
+    document.getElementById('scan-icon').style.display = 'none';
+    document.getElementById('scan-line').style.display = 'block';
+    document.getElementById('btn-cam').textContent = 'Fechar câmera';
+    setStatus('Aponte para o QR Code da NFC-e...');
+
+    await new Promise(resolve => { video.onloadedmetadata = resolve; });
+    await video.play();
     scanLoop(video);
 
   } catch(e) {
     camStream = null;
-    setStatus('❌ Permissão negada. Cole a URL da nota manualmente.');
+    if (e.name === 'OverconstrainedError') {
+      // Tenta sem forçar câmera traseira
+      try {
+        camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = document.getElementById('scan-video');
+        video.srcObject = camStream;
+        video.style.display = 'block';
+        document.getElementById('scan-icon').style.display = 'none';
+        document.getElementById('scan-line').style.display = 'block';
+        document.getElementById('btn-cam').textContent = 'Fechar câmera';
+        setStatus('Aponte para o QR Code...');
+        await new Promise(resolve => { video.onloadedmetadata = resolve; });
+        await video.play();
+        scanLoop(video);
+      } catch(e2) {
+        setStatus('❌ Não foi possível acessar a câmera.');
+      }
+    } else {
+      setStatus('❌ Permissão negada. Verifique as configurações do Chrome.');
+    }
   }
 }
 
@@ -316,16 +343,22 @@ function scanLoop(video) {
 
   const tick = () => {
     if (!camStream) return;
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+
+    if (video.readyState >= 2) {
+      canvas.width  = video.videoWidth  || 640;
+      canvas.height = video.videoHeight || 480;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
       if (window.jsQR) {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = window.jsQR(imageData.data, canvas.width, canvas.height);
-        if (code && code.data && (code.data.includes('nfce') || code.data.includes('sefaz') || code.data.includes('fazenda'))) {
+        const code = window.jsQR(imageData.data, canvas.width, canvas.height, {
+          inversionAttempts: "dontInvert"
+        });
+
+        if (code && code.data && code.data.length > 10) {
+          const url = code.data.trim();
           stopCam();
-          document.getElementById('url-input').value = code.data;
+          document.getElementById('url-input').value = url;
           setStatus('✅ QR Code lido! Processando...');
           processarManual();
           return;
@@ -334,7 +367,9 @@ function scanLoop(video) {
     }
     requestAnimationFrame(tick);
   };
-  requestAnimationFrame(tick);
+
+  // Aguarda 800ms para a câmera estabilizar antes de começar
+  setTimeout(() => requestAnimationFrame(tick), 800);
 }
 
 // ── PROCESSAR URL MANUAL ───────────────────────────────────────
