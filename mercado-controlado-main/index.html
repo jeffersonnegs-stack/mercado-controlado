@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#07080f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>NotaFácil</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ HOME ══════════════════════════════════════════════════ -->
+  <div class="screen active" id="s-home">
+    <div class="topbar">
+      <div class="topbar-logo">nota<span>fácil</span></div>
+      <div class="avatar">JO</div>
+    </div>
+    <div class="scroll-content">
+
+      <div class="hero">
+        <div class="hero-label">Gastos este mês</div>
+        <div class="hero-value" id="h-total">R$ 0,00</div>
+        <div class="hero-sub"  id="h-notas">0 notas registradas</div>
+        <div class="hero-row">
+          <div class="hero-pill"><span class="dot dot-green"></span><span id="h-ess">Ess. R$0</span></div>
+          <div class="hero-pill"><span class="dot dot-yellow"></span><span id="h-comp">Comp. R$0</span></div>
+          <div class="hero-pill"><span class="dot dot-red"></span><span id="h-sup">Sup. R$0</span></div>
+        </div>
+      </div>
+
+      <div class="score-bar-wrap">
+        <div class="score-header">
+          <span class="score-title">Score Financeiro</span>
+          <span class="score-num" id="h-score">100</span>
+        </div>
+        <div class="score-track">
+          <div class="score-fill" id="score-fill" style="width:100%"></div>
+        </div>
+        <div class="score-labels"><span>0</span><span>Ruim · Bom · Ótimo</span><span>100</span></div>
+      </div>
+
+      <div class="mini-cards">
+        <div class="mini-card">
+          <span class="mini-card-dot" style="background:var(--green)"></span>
+          <span class="mini-card-val green" id="mc-ess">R$0</span>
+          <span class="mini-card-lbl">Essencial</span>
+        </div>
+        <div class="mini-card">
+          <span class="mini-card-dot" style="background:var(--yellow)"></span>
+          <span class="mini-card-val yellow" id="mc-comp">R$0</span>
+          <span class="mini-card-lbl">Complementar</span>
+        </div>
+        <div class="mini-card">
+          <span class="mini-card-dot" style="background:var(--red)"></span>
+          <span class="mini-card-val red" id="mc-sup">R$0</span>
+          <span class="mini-card-lbl">Supérfluo</span>
+        </div>
+      </div>
+
+      <div class="section-title">Distribuição dos Gastos</div>
+      <div class="chart-wrap">
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-sq" style="background:#00e676"></span>Essencial</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#ffd600"></span>Complementar</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#ff5252"></span>Supérfluo</span>
+        </div>
+        <div style="position:relative;width:100%;height:200px">
+          <canvas id="donutChart" aria-label="Distribuição de gastos por categoria">Sem dados ainda.</canvas>
+        </div>
+      </div>
+
+      <!-- Atalho rápido para Cesta -->
+      <div class="cesta-atalho" onclick="App.navTo('cesta')">
+        <div class="cesta-atalho-left">
+          <div class="cesta-atalho-icon">🛒</div>
+          <div>
+            <div class="cesta-atalho-title">Comparador de Cesta</div>
+            <div class="cesta-atalho-sub">Veja onde comprar mais barato agora</div>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" opacity="0.5">
+          <polyline points="9,18 15,12 9,6"/>
+        </svg>
+      </div>
+
+      <div class="section-title">Últimas Notas</div>
+      <div class="hist-list" id="hist-list">
+        <div class="empty-state">
+          Nenhuma nota ainda.<br>Toque em Escanear para começar.
+        </div>
+      </div>
+    </div>
+
+    <button class="scan-fab" onclick="App.navTo('scan')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8"  y1="12" x2="16" y2="12"/>
+      </svg>
+      Escanear NFC-e
+    </button>
+
+    <nav class="bottom-nav">
+      <div class="nav-item active" onclick="App.navTo('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        <span class="nav-lbl">Início</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('cesta')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="nav-lbl">Cesta</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('scan')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="19" y="19" width="2" height="2"/><rect x="14" y="19" width="3" height="2"/></svg>
+        <span class="nav-lbl">Escanear</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('hist')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="nav-lbl">Histórico</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ══ CESTA ══════════════════════════════════════════════════ -->
+  <div class="screen" id="s-cesta">
+    <div class="topbar">
+      <div class="topbar-logo">🛒 <span>Cesta</span></div>
+    </div>
+    <div class="scroll-content" id="cesta-content" style="padding-bottom:100px">
+      <div class="empty-state" style="padding-top:60px">
+        <div style="font-size:36px;margin-bottom:12px">📍</div>
+        Detectando localização...
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="App.navTo('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        <span class="nav-lbl">Início</span>
+      </div>
+      <div class="nav-item active" onclick="App.navTo('cesta')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="nav-lbl">Cesta</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('scan')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="19" y="19" width="2" height="2"/><rect x="14" y="19" width="3" height="2"/></svg>
+        <span class="nav-lbl">Escanear</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('hist')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="nav-lbl">Histórico</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ══ SCAN ═══════════════════════════════════════════════════ -->
+  <div class="screen" id="s-scan">
+    <div class="scan-wrap">
+      <button class="back-btn" onclick="App.navTo('home')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+        Voltar
+      </button>
+      <div class="scan-title">Escanear NFC-e</div>
+      <div class="scan-sub">Aponte a câmera para o QR Code da nota fiscal</div>
+
+      <div class="scan-viewfinder">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        <div class="scan-line"        id="scan-line"></div>
+        <div class="scan-placeholder" id="scan-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.3">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/>
+            <rect x="19" y="14" width="2" height="2"/><rect x="19" y="19" width="2" height="2"/>
+            <rect x="14" y="19" width="3" height="2"/>
+          </svg>
+        </div>
+        <video id="scan-video" autoplay playsinline muted></video>
+      </div>
+
+      <button class="btn-primary" id="btn-cam"
+              onclick="ScanFeature.toggleCam()">Abrir câmera</button>
+
+      <div class="divider"><span>ou cole a URL</span></div>
+
+      <input class="url-input" id="url-input" type="url"
+             placeholder="https://www.nfce.fazenda.sp.gov.br/..."
+             autocomplete="off" autocorrect="off" spellcheck="false">
+
+      <!-- ID específico para não confundir com outros .btn-secondary -->
+      <button class="btn-secondary" id="btn-processar"
+              onclick="ScanFeature.processarURL()">Processar URL</button>
+      <button class="btn-secondary" id="btn-open-tab"
+              onclick="ScanFeature.abrirEmNovaAba()">Abrir em nova aba</button>
+
+      <div class="scan-status" id="scan-status"></div>
+    </div>
+  </div>
+
+  <!-- ══ HISTÓRICO ══════════════════════════════════════════════ -->
+  <div class="screen" id="s-hist">
+    <div class="topbar">
+      <div class="topbar-logo">Histórico</div>
+    </div>
+    <div class="scroll-content" id="hist-full"></div>
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="App.navTo('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        <span class="nav-lbl">Início</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('cesta')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="nav-lbl">Cesta</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('scan')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="19" y="19" width="2" height="2"/><rect x="14" y="19" width="3" height="2"/></svg>
+        <span class="nav-lbl">Escanear</span>
+      </div>
+      <div class="nav-item active" onclick="App.navTo('hist')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="nav-lbl">Histórico</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ══ DETALHE ════════════════════════════════════════════════ -->
+  <div class="screen" id="s-detalhe">
+    <div class="scroll-content" id="detalhe-content" style="padding-bottom:100px"></div>
+    <nav class="bottom-nav">
+      <div class="nav-item active" onclick="App.navTo('hist')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+        <span class="nav-lbl">Voltar</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ══ COMPARAÇÃO ════════════════════════════════════════════ -->
+  <div class="screen" id="s-comparar">
+    <div class="scroll-content" id="comp-content" style="padding-bottom:100px">
+      <div class="empty-state" style="padding-top:80px">
+        <div style="font-size:32px;margin-bottom:12px">🔍</div>
+        Carregando comparação...
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <div class="nav-item active" onclick="App.navTo('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        <span class="nav-lbl">Início</span>
+      </div>
+      <div class="nav-item" onclick="App.navTo('hist')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="nav-lbl">Histórico</span>
+      </div>
+    </nav>
+  </div>
+
+</div><!-- .app -->
+
+<!-- ══ SCRIPTS — ordem de carregamento importa ══════════════════
+     1. Libs externas
+     2. Core (sem dependências)
+     3. Data (depende de Core)
+     4. Features (dependem de Core + Data)
+     5. App (orquestra tudo)
+════════════════════════════════════════════════════════════════ -->
+
+<!-- 1. Libs externas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<!-- jsQR: local com fallback automático para CDN -->
+<script>
+(function () {
+  function load(src, ok, fail) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = ok;
+    s.onerror = fail;
+    document.head.appendChild(s);
+  }
+  load('./js/jsqr.js',
+    function () { /* local OK */ },
+    function () {
+      load('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
+        function () { /* CDN OK */ },
+        function () { window._jsQRFailed = true; }
+      );
+    }
+  );
+}());
+</script>
+
+<!-- 2. Core -->
+<script src="core/core.formatter.js"></script>
+<script src="core/core.storage.js"></script>
+<script src="core/core.geo.js"></script>
+
+<!-- 3. Data -->
+<script src="data/data.mercados.js"></script>
+<script src="data/data.cesta.js"></script>
+
+<!-- 4. Features -->
+<script src="features/feature.home.js"></script>
+<script src="features/feature.hist.js"></script>
+<script src="features/feature.scan.js"></script>
+<script src="features/feature.cesta.js"></script>
+<script src="features/feature.comparar.js"></script>
+
+<!-- 5. App controller -->
+<script src="js/app.js"></script>
+
+</body>
+</html>

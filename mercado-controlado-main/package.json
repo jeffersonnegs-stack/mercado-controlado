@@ -1,0 +1,13 @@
+{
+  "name": "notafacil",
+  "version": "1.0.0",
+  "description": "PWA de gerenciamento de gastos com comparação de cesta básica e leitura de NFC-e.",
+  "private": true,
+  "scripts": {
+    "start": "npx http-server -p 8080",
+    "lint": "echo 'No lint configured'"
+  },
+  "keywords": ["PWA", "NFC-e", "finanças", "cesta básica"],
+  "author": "NotaFácil",
+  "license": "MIT"
+}
