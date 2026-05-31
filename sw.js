@@ -6,31 +6,29 @@
 // • Atualize CACHE_VERSION a cada deploy
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'notafacil-v17';
+const CACHE_VERSION = 'notafacil-v18';
 
 const ASSETS_LOCAIS = [
   './',
   './index.html',
-  './css/style.css',
+  './style.css',
   './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './js/jsqr.js',
+  './jsqr.js',
   // Core
-  './core/core.formatter.js',
-  './core/core.storage.js',
-  './core/core.geo.js',
+  './core.formatter.js',
+  './core.storage.js',
+  './core.geo.js',
   // Data
-  './data/data.mercados.js',
-  './data/data.cesta.js',
+  './data.mercados.js',
+  './data.cesta.js',
   // Features
-  './features/feature.home.js',
-  './features/feature.hist.js',
-  './features/feature.scan.js',
-  './features/feature.cesta.js',
-  './features/feature.comparar.js',
+  './feature.home.js',
+  './feature.hist.js',
+  './feature.scan.js',
+  './feature.cesta.js',
+  './feature.comparar.js',
   // App
-  './js/app.js',
+  './app.js',
 ];
 
 // ── INSTALL ──────────────────────────────────────────────────
