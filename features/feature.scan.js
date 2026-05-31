@@ -1,25 +1,72 @@
 // ════════════════════════════════════════════════════════════════
 // NotaFácil — features/scan.js
 // Escâner de QR Code + Processamento de URL NFC-e
+//  • jsQR carregado diretamente aqui (sem depender do stub)
+//  • scanLoop só inicia após jsQR confirmado
 //  • Câmera com fallback triplo
-//  • scanLoop com guarda contra execução dupla
 //  • Timeout de 30s na API com AbortController
-//  • Botão identificado por ID (não por querySelector genérico)
 // ════════════════════════════════════════════════════════════════
 
 const ScanFeature = (() => {
   const API_URL = 'https://script.google.com/macros/s/AKfycbywxAftJ711lOTeagCSyIpzVKK0394m4F4VmzmXEzmvXHgdpKj55ZAj7_Ucz4jrIpc-kQ/exec';
 
-  let _stream      = null;   // MediaStream ativo
-  let _scanAtivo   = false;  // evita loop duplo
+  let _stream    = null;
+  let _scanAtivo = false;
+  let _jsQRPronto = false; // flag local — jsQR confirmado carregado
+
+  // ── GARANTE jsQR CARREGADO ────────────────────────────────────
+  // Tenta 3 fontes em ordem: window.jsQR já existe → CDN 1 → CDN 2
+  function _garantirJsQR() {
+    return new Promise(resolve => {
+      // Já está disponível
+      if (typeof window.jsQR === 'function') {
+        _jsQRPronto = true;
+        resolve(true);
+        return;
+      }
+
+      let tentativas = 0;
+      const cdns = [
+        'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js',
+      ];
+
+      function tentarCDN(idx) {
+        if (idx >= cdns.length) {
+          console.error('[Scan] jsQR não disponível em nenhuma fonte');
+          resolve(false);
+          return;
+        }
+
+        const s = document.createElement('script');
+        s.src = cdns[idx];
+        s.onload = () => {
+          if (typeof window.jsQR === 'function') {
+            _jsQRPronto = true;
+            console.log('[Scan] jsQR carregado do CDN:', cdns[idx]);
+            resolve(true);
+          } else {
+            tentarCDN(idx + 1);
+          }
+        };
+        s.onerror = () => {
+          console.warn('[Scan] CDN falhou:', cdns[idx]);
+          tentarCDN(idx + 1);
+        };
+        document.head.appendChild(s);
+      }
+
+      tentarCDN(0);
+    });
+  }
 
   // ── CÂMERA ───────────────────────────────────────────────────
   async function toggleCam() {
     if (_stream) { pararCam(); return; }
 
-    _setStatus('⏳ Verificando leitor de QR Code...');
+    _setStatus('⏳ Carregando leitor de QR Code...');
 
-    const jsQROk = await _aguardarJsQR(8000);
+    const jsQROk = await _garantirJsQR();
     if (!jsQROk) {
       _setStatus('❌ Leitor de QR indisponível. Use "Cole a URL" abaixo.');
       return;
@@ -28,7 +75,7 @@ const ScanFeature = (() => {
     _setStatus('📷 Abrindo câmera...');
 
     const constraints = [
-      { video: { facingMode: { ideal: 'environment' } } },
+      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
       { video: { facingMode: 'user' } },
       { video: true },
     ];
@@ -43,30 +90,38 @@ const ScanFeature = (() => {
     }
 
     if (!_stream) {
-      _setStatus('❌ Câmera bloqueada. Permita o acesso nas configurações.');
+      _setStatus('❌ Câmera bloqueada. Permita o acesso nas configurações do navegador.');
       return;
     }
 
     const video = _getEl('scan-video');
     if (!video) return;
 
-    video.srcObject    = _stream;
+    video.srcObject     = _stream;
     video.style.display = 'block';
-    _getEl('scan-icon')?.style && (_getEl('scan-icon').style.display = 'none');
-    _getEl('scan-line')?.style && (_getEl('scan-line').style.display = 'block');
-    _getEl('btn-cam')  && (_getEl('btn-cam').textContent = 'Fechar câmera');
+
+    const icon = _getEl('scan-icon');
+    const line = _getEl('scan-line');
+    const btn  = _getEl('btn-cam');
+    if (icon) icon.style.display = 'none';
+    if (line) line.style.display = 'block';
+    if (btn)  btn.textContent    = 'Fechar câmera';
+
     _setStatus('🔍 Aponte para o QR Code da NFC-e...');
 
+    // Aguarda vídeo pronto
     await new Promise(resolve => {
       video.onloadedmetadata = resolve;
       setTimeout(resolve, 3000);
     });
 
-    try { await video.play(); } catch { /* ignorado — autoplay pode falhar em alguns browsers */ }
+    try { await video.play(); } catch { /* autoplay bloqueado em alguns browsers */ }
 
+    // Inicia scan apenas se ainda não ativo
     if (!_scanAtivo) {
       _scanAtivo = true;
-      setTimeout(() => _scanLoop(video), 800);
+      // Pequeno delay para câmera estabilizar
+      setTimeout(() => _scanLoop(video), 600);
     }
   }
 
@@ -78,35 +133,60 @@ const ScanFeature = (() => {
     }
     const video = _getEl('scan-video');
     if (video) {
-      video.srcObject    = null;
+      video.srcObject     = null;
       video.style.display = 'none';
     }
-    _getEl('scan-icon')?.style && (_getEl('scan-icon').style.display = 'block');
-    _getEl('scan-line')?.style && (_getEl('scan-line').style.display = 'none');
-    const btn = _getEl('btn-cam');
-    if (btn) btn.textContent = 'Abrir câmera';
+    const icon = _getEl('scan-icon');
+    const line = _getEl('scan-line');
+    const btn  = _getEl('btn-cam');
+    if (icon) icon.style.display = 'block';
+    if (line) line.style.display = 'none';
+    if (btn)  btn.textContent    = 'Abrir câmera';
   }
 
   function _scanLoop(video) {
     const canvas = document.createElement('canvas');
     const ctx    = canvas.getContext('2d');
+    let frameCount = 0;
 
     const tick = () => {
-      // Para se câmera foi encerrada externamente
+      // Para imediatamente se câmera foi encerrada
       if (!_scanAtivo || !_stream) {
         _scanAtivo = false;
         return;
       }
 
-      if (video.readyState >= 2 && window.jsQR) {
-        canvas.width  = video.videoWidth  || 640;
-        canvas.height = video.videoHeight || 480;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Processa 1 de cada 3 frames para não sobrecarregar CPU
+      frameCount++;
+      if (frameCount % 3 !== 0) {
+        requestAnimationFrame(tick);
+        return;
+      }
 
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code    = window.jsQR(imgData.data, canvas.width, canvas.height, {
+      if (video.readyState >= 2 && typeof window.jsQR === 'function') {
+        const w = video.videoWidth  || 640;
+        const h = video.videoHeight || 480;
+
+        // Só redimensiona o canvas se necessário
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width  = w;
+          canvas.height = h;
+        }
+
+        ctx.drawImage(video, 0, 0, w, h);
+        const imgData = ctx.getImageData(0, 0, w, h);
+
+        // Tenta primeiro sem inversão (mais rápido)
+        let code = window.jsQR(imgData.data, w, h, {
           inversionAttempts: 'dontInvert',
         });
+
+        // Se não encontrou, tenta com inversão (QR codes claros em fundo escuro)
+        if (!code) {
+          code = window.jsQR(imgData.data, w, h, {
+            inversionAttempts: 'onlyInvert',
+          });
+        }
 
         if (code?.data && code.data.length > 10) {
           pararCam();
@@ -134,7 +214,7 @@ const ScanFeature = (() => {
       return;
     }
     if (!url.startsWith('http')) {
-      _setStatus('⚠️ URL inválida. Deve começar com http:// ou https://');
+      _setStatus('⚠️ URL inválida. Deve começar com https://');
       return;
     }
 
@@ -151,12 +231,10 @@ const ScanFeature = (() => {
       clearTimeout(timer);
 
       if (!res.ok) {
-        console.error('[Scan] Resposta HTTP inválida:', res.status, res.statusText);
         _setStatus('❌ Erro ao acessar o servidor. Tente novamente.');
         return;
       }
 
-      // Lê como texto primeiro para tratar respostas não-JSON
       const text = await res.text();
       let data;
       try {
@@ -176,14 +254,12 @@ const ScanFeature = (() => {
         return;
       }
 
-      // Log para debug — mostra o que o servidor retornou
       console.log('[Scan] Resposta do servidor:', JSON.stringify(data.dados || data, null, 2));
 
       const notaSalva = _salvarNota(data);
       if (input) input.value = '';
       _setStatus('✅ Nota salva! Abrindo comparação...');
 
-      // Aguarda 800ms para o usuário ler a mensagem de sucesso
       setTimeout(() => App.abrirComparacao(notaSalva), 800);
 
     } catch (e) {
@@ -200,62 +276,45 @@ const ScanFeature = (() => {
 
   function _salvarNota(data) {
     const d = data.dados || data || {};
-
-    // Usa a data de emissão da nota fiscal quando disponível.
-    // O backend pode retornar nos campos: dataEmissao, data, dhEmi, dhRecbto
-    // Valida se é uma data real antes de usar.
     const dataServidor = d.dataEmissao || d.dhEmi || d.dhRecbto || d.data || null;
-    const dataFinal = _parsarData(dataServidor) || new Date().toISOString();
+    const dataFinal    = _parsarData(dataServidor) || new Date().toISOString();
 
     const nota = {
-      data:            dataFinal,
-      dataEscaneamento: new Date().toISOString(), // guarda também quando foi escaneado
-      emitente:        d.emitente     || 'Mercado',
-      itens:           Number(d.itens || 0),
-      essencial:       Number(d.essencial    || 0),
-      complementar:    Number(d.complementar || 0),
-      superfluo:       Number(d.superfluo    || 0),
-      produtos:        Array.isArray(d.produtos) ? d.produtos : [],
+      data:             dataFinal,
+      dataEscaneamento: new Date().toISOString(),
+      emitente:         d.emitente     || 'Mercado',
+      itens:            Number(d.itens || 0),
+      essencial:        Number(d.essencial    || 0),
+      complementar:     Number(d.complementar || 0),
+      superfluo:        Number(d.superfluo    || 0),
+      produtos:         Array.isArray(d.produtos) ? d.produtos : [],
     };
+
     const ok = Storage.adicionarNota(nota);
-    if (!ok) console.error('[Scan] Falha ao salvar nota no storage');
+    if (!ok) console.error('[Scan] Falha ao salvar nota');
     return nota;
   }
 
-  // ── HELPERS ──────────────────────────────────────────────────
-
-  /**
-   * Tenta converter string de data em ISO string válido.
-   * Aceita formatos: ISO 8601, dd/MM/yyyy HH:mm:ss, yyyyMMddHHmmss
-   * Retorna null se não conseguir parsear.
-   */
   function _parsarData(str) {
     if (!str) return null;
     try {
-      // Formato brasileiro: "25/12/2024 14:30:00"
-      const brMatch = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
-      if (brMatch) {
-        const [, d, m, y, h, mi, s] = brMatch;
-        const dt = new Date(`${y}-${m}-${d}T${h}:${mi}:${s}`);
+      // "25/12/2024 14:30:00"
+      const br = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+      if (br) {
+        const dt = new Date(`${br[3]}-${br[2]}-${br[1]}T${br[4]}:${br[5]}:${br[6]}`);
         if (!isNaN(dt.getTime())) return dt.toISOString();
       }
-
-      // Formato NFC-e compacto: "20241225143000" (yyyyMMddHHmmss)
-      const compMatch = String(str).match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
-      if (compMatch) {
-        const [, y, m, d, h, mi, s] = compMatch;
-        const dt = new Date(`${y}-${m}-${d}T${h}:${mi}:${s}`);
+      // "20241225143000"
+      const cp = String(str).match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+      if (cp) {
+        const dt = new Date(`${cp[1]}-${cp[2]}-${cp[3]}T${cp[4]}:${cp[5]}:${cp[6]}`);
         if (!isNaN(dt.getTime())) return dt.toISOString();
       }
-
-      // Tenta direto (ISO 8601 e outros formatos padrão)
+      // ISO ou qualquer outro formato
       const dt = new Date(str);
       if (!isNaN(dt.getTime())) return dt.toISOString();
-
       return null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
 
   function _setStatus(msg) {
@@ -264,9 +323,11 @@ const ScanFeature = (() => {
   }
 
   function _setBtnProcessar(disabled) {
-    const btn = document.getElementById('btn-processar'); // ID específico
+    const btn = document.getElementById('btn-processar');
     if (btn) btn.disabled = disabled;
   }
+
+  function _getEl(id) { return document.getElementById(id); }
 
   function abrirEmNovaAba() {
     const input = _getEl('url-input');
@@ -275,33 +336,10 @@ const ScanFeature = (() => {
       _setStatus('⚠️ Cole uma URL válida primeiro.');
       return;
     }
-
-    const novaJanela = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!novaJanela) {
-      _setStatus('❌ O navegador bloqueou a abertura em nova aba.');
-      return;
-    }
+    const w = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!w) { _setStatus('❌ O navegador bloqueou a nova aba.'); return; }
     _setStatus('✅ Abrindo URL em nova aba...');
-    novaJanela.focus();
-  }
-
-  function _getEl(id) {
-    return document.getElementById(id);
-  }
-
-  function _aguardarJsQR(ms) {
-    return new Promise(resolve => {
-      if (window.jsQR)        { resolve(true);  return; }
-      if (window._jsQRFailed) { resolve(false); return; }
-      const inicio = Date.now();
-      const check  = () => {
-        if (window.jsQR)        { resolve(true);  return; }
-        if (window._jsQRFailed) { resolve(false); return; }
-        if (Date.now() - inicio >= ms) { resolve(false); return; }
-        setTimeout(check, 100);
-      };
-      check();
-    });
+    w.focus();
   }
 
   return { toggleCam, pararCam, processarURL, abrirEmNovaAba };
