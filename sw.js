@@ -6,7 +6,7 @@
 // • Atualize CACHE_VERSION a cada deploy
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'notafacil-v18';
+const CACHE_VERSION = 'notafacil-v19';
 
 const ASSETS_LOCAIS = [
   './',
