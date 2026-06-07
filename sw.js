@@ -63,12 +63,15 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const { url, method } = request;
 
-  // Ignora métodos que não sejam GET (ex: POST, PUT, DELETE)
+  // 1. Ignora métodos que não sejam GET
   if (method !== 'GET') return;
 
-  // 1. APIs (Google, Overpass, Nominatim) — sempre rede
+  // 2. CORREÇÃO DO ERRO: Ignora completamente extensões do Chrome
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+
+  // 3. APIs externas — sempre rede, nunca cacheia
   if (
-    url.includes('script.google.com') || 
+    url.includes('://google.com') || 
     url.includes('overpass-api.de') || 
     url.includes('nominatim.openstreetmap.org')
   ) {
@@ -76,11 +79,11 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. Fontes Google e CDNs — network-first com fallback cache
+  // 4. Fontes Google e CDNs — network-first com fallback cache
   if (
-    url.includes('fonts.googleapis.com') || 
-    url.includes('fonts.gstatic.com') || 
-    url.includes('cdnjs.cloudflare.com') || 
+    url.includes('://googleapis.com') || 
+    url.includes('://gstatic.com') || 
+    url.includes('://cloudflare.com') || 
     url.includes('cdn.jsdelivr.net')
   ) {
     event.respondWith(
@@ -98,6 +101,25 @@ self.addEventListener('fetch', event => {
     );
     return;
   }
+
+  // 5. Assets locais — cache-first puro com fallback rede
+  event.respondWith(
+    caches.match(request, { ignoreSearch: true }).then(cached => {
+      if (cached) return cached;
+      
+      return fetch(request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          event.waitUntil(
+            caches.open(CACHE_VERSION).then(c => c.put(request, clone))
+          );
+        }
+        return response;
+      });
+    })
+  );
+});
+
 
   // 3. Assets locais — cache-first puro com fallback rede (sem re-cachear dinamicamente)
   // Nota: Evita que arquivos modificados fiquem presos no cache para sempre se a versão não mudar.
