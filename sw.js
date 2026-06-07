@@ -3,23 +3,24 @@
 // ════════════════════════════════════════════════════════════════
 const CACHE_VERSION = 'notafacil-v19';
 const ASSETS_LOCAIS = [
-  './',
-  './index.html',
-  './style.css',
-  './manifest.json',
-  './jsqr.js',
-  './core.formatter.js',
-  './core.storage.js',
-  './core.geo.js',
-  './data.mercados.js',
-  './data.cesta.js',
-  './feature.home.js',
-  './feature.hist.js',
-  './feature.scan.js',
-  './feature.cesta.js',
-  './feature.comparar.js',
-  './app.js',
+  '',
+  'index.html',
+  'style.css',
+  'manifest.json',
+  'jsqr.js',
+  'core.formatter.js',
+  'core.storage.js',
+  'core.geo.js',
+  'data.mercados.js',
+  'data.cesta.js',
+  'feature.home.js',
+  'feature.hist.js',
+  'feature.scan.js',
+  'feature.cesta.js',
+  'feature.comparar.js',
+  'app.js',
 ];
+
 
 // ── INSTALL ──────────────────────────────────────────────────
 self.addEventListener('install', event => {
